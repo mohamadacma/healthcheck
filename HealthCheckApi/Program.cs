@@ -1,12 +1,14 @@
-using Microsoft.EntityFrameworkCore
+using Microsoft.EntityFrameworkCore;
+using HealthCheckApi.Models;
+using HealthCheckApi.Data;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(); 
 builder.Services.AddDbContext<ItemsDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
@@ -38,6 +40,12 @@ app.MapGet("/weatherforecast", () =>
 .WithName("GetWeatherForecast");
 
 // GET and POST endpoints to manage Item data
+app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
+{
+    var item = await context.Items.FindAsync(id);
+    return item is not null ? Results.Ok(item) : Results.NotFound();
+});
+
 app.MapGet("/items", async (ItemsDbContext context) =>
     await context.Items.ToListAsync())
     .WithName("GetItems");
