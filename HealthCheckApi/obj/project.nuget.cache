@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "3DBWPBZHAsE=",
+  "dgSpecHash": "Sr+DlSE/u2s=",
   "success": true,
   "projectFilePath": "/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi/HealthCheckApi.csproj",
   "expectedPackageFiles": [
@@ -26,6 +26,12 @@
     "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.dependencyinjection/9.0.7/microsoft.extensions.dependencyinjection.9.0.7.nupkg.sha512",
     "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/9.0.7/microsoft.extensions.dependencyinjection.abstractions.9.0.7.nupkg.sha512",
     "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.dependencymodel/9.0.7/microsoft.extensions.dependencymodel.9.0.7.nupkg.sha512",
+    "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.diagnostics.abstractions/9.0.7/microsoft.extensions.diagnostics.abstractions.9.0.7.nupkg.sha512",
+    "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.diagnostics.healthchecks/9.0.7/microsoft.extensions.diagnostics.healthchecks.9.0.7.nupkg.sha512",
+    "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.diagnostics.healthchecks.abstractions/9.0.7/microsoft.extensions.diagnostics.healthchecks.abstractions.9.0.7.nupkg.sha512",
+    "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.diagnostics.healthchecks.entityframeworkcore/9.0.7/microsoft.extensions.diagnostics.healthchecks.entityframeworkcore.9.0.7.nupkg.sha512",
+    "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.fileproviders.abstractions/9.0.7/microsoft.extensions.fileproviders.abstractions.9.0.7.nupkg.sha512",
+    "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.hosting.abstractions/9.0.7/microsoft.extensions.hosting.abstractions.9.0.7.nupkg.sha512",
     "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.logging/9.0.7/microsoft.extensions.logging.9.0.7.nupkg.sha512",
     "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.logging.abstractions/9.0.7/microsoft.extensions.logging.abstractions.9.0.7.nupkg.sha512",
     "/Users/mohamadahmad/.nuget/packages/microsoft.extensions.options/9.0.7/microsoft.extensions.options.9.0.7.nupkg.sha512",

@@ -9,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi(); 
 builder.Services.AddDbContext<ItemsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<ItemsDbContext>();
+    
 
 var app = builder.Build();
 
@@ -58,7 +61,10 @@ app.MapPost("/items", async (ItemsDbContext context, Item item) =>
 })
 .WithName("CreateItem");
 
-
+//endpoints to monitor app and db health
+app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready");
+app.MapHealthChecks("/health/live");
 
 
 app.Run();
