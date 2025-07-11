@@ -45,6 +45,10 @@ app.MapGet("/weatherforecast", () =>
 // GET and POST endpoints to manage Item data
 app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
 {
+    //validate Id
+    if(id <=0) 
+    return Results.BadRequest("ID must be greater than 0");
+
     var item = await context.Items.FindAsync(id);
     return item is not null ? Results.Ok(item) : Results.NotFound();
 });
@@ -55,6 +59,16 @@ app.MapGet("/items", async (ItemsDbContext context) =>
 
 app.MapPost("/items", async (ItemsDbContext context, Item item) =>
 {
+    if(string.IsNullOrWhiteSpace(item.Name))
+    return Results.BadRequest("Name is required");
+
+    if(item.Quantity < 0)
+    return Results.BadRequest("Quantity cannot be negative");
+
+    if(item.Name.length > 100)
+    return Results.BadRequest("Name cannot exceed 100 characters");
+
+
     context.Items.Add(item);
     await context.SaveChangesAsync();
     return Results.Created($"/items/{item.Id}", item);
