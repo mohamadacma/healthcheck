@@ -15,6 +15,9 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// Get logger 
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -30,6 +33,7 @@ var summaries = new[]
 
 app.MapGet("/weatherforecast", () =>
 {
+
     var forecast =  Enumerable.Range(1, 5).Select(index =>
         new WeatherForecast
         (
@@ -45,28 +49,46 @@ app.MapGet("/weatherforecast", () =>
 // GET and POST endpoints to manage Item data
 app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
 {
+    logger.LogInformation("Retrieving item with ID: {ItemId}", id);
+
     //validate Id
     if(id <=0) 
+    logger.LogWarning("Invalid item ID requested: {ItemId}", id);
     return Results.BadRequest("ID must be greater than 0");
 
     var item = await context.Items.FindAsync(id);
-    return item is not null ? Results.Ok(item) : Results.NotFound();
+    if(item is null)
+    {
+        logger.LogWarning("Item not found with ID: {ItemId}", id);
+        return Results.NotFound($"Item with ID {id} not found");
+    }
+        logger.LogInformation("Successfully retreived item: {ItemId}", id);
+        return Results.Ok(item);
 });
 
-app.MapGet("/items", async (ItemsDbContext context) =>
-    await context.Items.ToListAsync())
+app.MapGet("/items", async (ItemsDbContext context) => {
+    logger.LogInformation("Retreiving all items");
+    var items= await context.Items.ToListAsync()
+    logger.LogInformation("Sucessfully retreived items", items);
+    })
     .WithName("GetItems");
 
-app.MapPost("/items", async (ItemsDbContext context, Item item) =>
-{
-    if(string.IsNullOrWhiteSpace(item.Name))
-    return Results.BadRequest("Name is required");
+app.MapPost("/items", async (ItemsDbContext context, Item item) => {
+    logger.LogInformation("Creating new item: ")
+    if(string.IsNullOrWhiteSpace(item.Name)) {
+        logger.LogWarning("Item creation failed:");
+        return Results.BadRequest("Name is required");
+    }
 
-    if(item.Quantity < 0)
-    return Results.BadRequest("Quantity cannot be negative");
+    if(item.Quantity < 0) {
+        logger.LogWarning("Item creation failed: ")
+        return Results.BadRequest("Quantity cannot be negative");
+    }
 
-    if(item.Name.length > 100)
-    return Results.BadRequest("Name cannot exceed 100 characters");
+    if(item.Name.Length > 100) {
+        logger.LogWarning("Item creation failed:");
+        return Results.BadRequest("Name cannot exceed 100 characters");
+    }
 
 
     context.Items.Add(item);
