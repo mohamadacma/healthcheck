@@ -53,47 +53,104 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
 
     //validate Id
     if(id <=0) 
-    logger.LogWarning("Invalid item ID requested: {ItemId}", id);
-    return Results.BadRequest("ID must be greater than 0");
-
-    var item = await context.Items.FindAsync(id);
-    if(item is null)
     {
-        logger.LogWarning("Item not found with ID: {ItemId}", id);
-        return Results.NotFound($"Item with ID {id} not found");
+        logger.LogWarning("Invalid item ID requested: {ItemId}", id);
+        return Results.BadRequest("ID must be greater than 0");
     }
+
+    try
+     {
+        var item = await context.Items.FindAsync(id);
+        if(item is null)
+        {
+            logger.LogWarning("Item not found with ID: {ItemId}", id);
+            return Results.NotFound($"Item with ID {id} not found");
+        }
+
         logger.LogInformation("Successfully retreived item: {ItemId}", id);
         return Results.Ok(item);
-});
+    } 
+    catch (SqlException ex)
+    {
+        logger.LogError(ex, "Unexpected error occurred while retrieving item with ID: {ItemId}", id);
+        return Results.Problem("An unexpected error occured", statusCode: 500);
+    }
+})
+.WithName("GetItem");
 
-app.MapGet("/items", async (ItemsDbContext context) => {
+
+//Get to retrieve all items
+app.MapGet("/items", async (ItemsDbContext context) =>
+ {
     logger.LogInformation("Retreiving all items");
-    var items= await context.Items.ToListAsync()
-    logger.LogInformation("Sucessfully retreived items", items);
-    })
+
+    try 
+    {
+        var items= await context.Items.ToListAsync();
+        logger.LogInformation("Sucessfully retreived items", items);
+    }
+    catch (SqlException ex)
+    {
+        logger.LogError(ex, "Database error occured while retrieving all items");
+        return Results.Problem("Database error occurred", statusCode: 500);
+    }
+    catch (Exception ex)
+    {
+         logger.LogError(ex, "Unexpected error occurred while retrieving all items");
+         return Results.Problem("An unexpected error occurred", statusCode: 500);
+    }
+ })
     .WithName("GetItems");
 
+//POST to create a new item
 app.MapPost("/items", async (ItemsDbContext context, Item item) => {
-    logger.LogInformation("Creating new item: ")
-    if(string.IsNullOrWhiteSpace(item.Name)) {
-        logger.LogWarning("Item creation failed:");
+    logger.LogInformation("Creating new item: {ItemName}", item?.Name);
+    //validate
+    if(item == null) 
+    {
+        logger.LogWarning("Item creation failed: null item provided");
+        return Results.BadRequest("Item data is required");
+    }
+    if(string.IsNullOrWhiteSpace(item.Name)) 
+    {
+        logger.LogWarning("Item creation failed: name is null or empty");
         return Results.BadRequest("Name is required");
     }
 
-    if(item.Quantity < 0) {
-        logger.LogWarning("Item creation failed: ")
+    if(item.Quantity < 0) 
+    {
+        logger.LogWarning("Item creation failed: negative quantity not allowed");
         return Results.BadRequest("Quantity cannot be negative");
     }
 
-    if(item.Name.Length > 100) {
-        logger.LogWarning("Item creation failed:");
+    if(item.Name.Length > 100) 
+    {
+        logger.LogWarning("Item creation failed: name is too long");
         return Results.BadRequest("Name cannot exceed 100 characters");
     }
 
-
-    context.Items.Add(item);
-    await context.SaveChangesAsync();
-    return Results.Created($"/items/{item.Id}", item);
+    try 
+    {
+        context.Items.Add(item);
+        await context.SaveChangesAsync();
+        logger.LogInformation("Successfully created item with ID: {ItemId}", item.Id);
+        return Results.Created($"/items/{item.Id}", item);
+    }
+    catch (dbUpdateException ex)
+    {
+         logger.LogError(ex, "Database update error occurred while creating item");
+         return Results.Problem("Failed to save item to database", statusCode: 500);
+    }
+    catch (SqlException ex)
+    {
+        logger.LogError(ex, "Database error occurred while creating item");
+        return Results.Problem("Database error occurred", statusCode: 500);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Unexpected error occurred while creating item");
+        return Results.Problem("An unexpected error occurred", statusCode: 500);
+    }
 })
 .WithName("CreateItem");
 
