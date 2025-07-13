@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using HealthCheckApi.Models;
 using HealthCheckApi.Data;
+using Npgsql;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,7 +47,7 @@ app.MapGet("/weatherforecast", () =>
 })
 .WithName("GetWeatherForecast");
 
-// GET and POST endpoints to manage Item data
+// GET to retireve item by ID
 app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
 {
     logger.LogInformation("Retrieving item with ID: {ItemId}", id);
@@ -70,7 +71,7 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
         logger.LogInformation("Successfully retreived item: {ItemId}", id);
         return Results.Ok(item);
     } 
-    catch (SqlException ex)
+    catch (NpgsqlException ex)
     {
         logger.LogError(ex, "Unexpected error occurred while retrieving item with ID: {ItemId}", id);
         return Results.Problem("An unexpected error occured", statusCode: 500);
@@ -87,9 +88,10 @@ app.MapGet("/items", async (ItemsDbContext context) =>
     try 
     {
         var items= await context.Items.ToListAsync();
-        logger.LogInformation("Sucessfully retreived items", items);
+        logger.LogInformation("Successfully retrieved {ItemCount} items", items.Count);
+        return Results.Ok(items);
     }
-    catch (SqlException ex)
+    catch (NpgsqlException ex)
     {
         logger.LogError(ex, "Database error occured while retrieving all items");
         return Results.Problem("Database error occurred", statusCode: 500);
@@ -136,12 +138,12 @@ app.MapPost("/items", async (ItemsDbContext context, Item item) => {
         logger.LogInformation("Successfully created item with ID: {ItemId}", item.Id);
         return Results.Created($"/items/{item.Id}", item);
     }
-    catch (dbUpdateException ex)
+    catch (DbUpdateException ex)
     {
          logger.LogError(ex, "Database update error occurred while creating item");
          return Results.Problem("Failed to save item to database", statusCode: 500);
     }
-    catch (SqlException ex)
+    catch (NpgsqlException ex)
     {
         logger.LogError(ex, "Database error occurred while creating item");
         return Results.Problem("Database error occurred", statusCode: 500);
