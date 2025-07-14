@@ -3,4 +3,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace HealthCheckApi.Models;
 
-public record Item(int Id, string Name, int Quantity, DateTime LastUpdated);
+public class Item 
+{
+        public int Id { get; set; }
+        public string Name {get; set; } = string.empty;
+        public int Quantity {get; set; } 
+        public DateTime LastUpdated { get; set; }
+
+        //constructor
+        public Item () {}
+        
+        public Item(string name, int quantity)
+        {
+            Name = name;
+            Quantity =  quantity;
+            LastUpdated = DateTime.UtcNow;
+        }
+
+}
+

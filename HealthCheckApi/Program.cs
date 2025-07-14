@@ -80,7 +80,7 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
 .WithName("GetItem");
 
 
-//Get to retrieve all items
+//GET to retrieve all items
 app.MapGet("/items", async (ItemsDbContext context) =>
  {
     logger.LogInformation("Retreiving all items");
@@ -155,6 +155,9 @@ app.MapPost("/items", async (ItemsDbContext context, Item item) => {
     }
 })
 .WithName("CreateItem");
+
+//PUT to update item
+//DELETE to remove item
 
 //endpoints to monitor app and db health
 app.MapHealthChecks("/health");
