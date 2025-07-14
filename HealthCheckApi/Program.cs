@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using HealthCheckApi.Models;
 using HealthCheckApi.Data;
 using Npgsql;
+using HealthCheckApi.Extensions;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,7 +71,7 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
         }
 
         logger.LogInformation("Successfully retreived item: {ItemId}", id);
-        return Results.Ok(item);
+        return Results.Ok(item.ToResponseDto());
     } 
     catch (NpgsqlException ex)
     {
@@ -90,7 +91,7 @@ app.MapGet("/items", async (ItemsDbContext context) =>
     {
         var items= await context.Items.ToListAsync();
         logger.LogInformation("Successfully retrieved {ItemCount} items", items.Count);
-        return Results.Ok(items);
+        return Results.Ok(items.Select(item => item.ToResponseDto()));
     }
     catch (NpgsqlException ex)
     {
@@ -107,10 +108,10 @@ app.MapGet("/items", async (ItemsDbContext context) =>
 
 
 //POST to create a new item
-app.MapPost("/items", async (ItemsDbContext context, Item item) => {
-    logger.LogInformation("Creating new item: {ItemName}", item?.Name);
+app.MapPost("/items", async (ItemsDbContext context, CreateItemDto dto) => {
+    logger.LogInformation("Creating new item: {ItemName}", dto?.Name);
     //validate
-    if(item == null) 
+    if(dto == null) 
     {
         logger.LogWarning("Item creation failed: null item provided");
         return Results.BadRequest("Item data is required");
@@ -121,13 +122,13 @@ app.MapPost("/items", async (ItemsDbContext context, Item item) => {
         return Results.BadRequest("Name is required");
     }
 
-    if(item.Quantity < 0) 
+    if(dto.Quantity < 0) 
     {
         logger.LogWarning("Item creation failed: negative quantity not allowed");
         return Results.BadRequest("Quantity cannot be negative");
     }
 
-    if(item.Name.Length > 100) 
+    if(dto.Name.Length > 100) 
     {
         logger.LogWarning("Item creation failed: name is too long");
         return Results.BadRequest("Name cannot exceed 100 characters");
@@ -135,10 +136,11 @@ app.MapPost("/items", async (ItemsDbContext context, Item item) => {
 
     try 
     {
+        var item = dto.ToItem;
         context.Items.Add(item);
         await context.SaveChangesAsync();
         logger.LogInformation("Successfully created item with ID: {ItemId}", item.Id);
-        return Results.Created($"/items/{item.Id}", item);
+        return Results.Created($"/items/{item.Id}", item.ToResponseDto());
     }
     catch (DbUpdateException ex)
     {
@@ -160,7 +162,7 @@ app.MapPost("/items", async (ItemsDbContext context, Item item) => {
 
 
 //PUT to update item
-app.MapPut("/items/{id}", async (ItemsDbContext context, int id, Item updatedItem) =>
+app.MapPut("/items/{id}", async (ItemsDbContext context, int id, UpdateItemDto dto) =>
 {
     logger.LogInformation("Updating item with ID: {ItemId}", id);
 
@@ -171,13 +173,13 @@ app.MapPut("/items/{id}", async (ItemsDbContext context, int id, Item updatedIte
         return Results.BadRequest("ID must be greater than 0");
     }
     //validate input
-    if(updatedItem == null)
+    if(dto == null)
     {
         logger.LogWarning("Update failed: empty name for ID: {ItemId}", id);
         return Results.BadRequest("Name is required");
     }
 
-    if (updatedItem.Quantity < 0)
+    if (dto.Quantity < 0    )
     {
          logger.LogWarning("Update failed: name too long for ID: {ItemId}", id);
          return Results.BadRequest("Name cannot exceed 100 characters");
@@ -192,15 +194,13 @@ app.MapPut("/items/{id}", async (ItemsDbContext context, int id, Item updatedIte
             return Results.NotFound($"Item with ID {id} not found");
          }
         //update item
-         existingItem.Name = updatedItem.Name;
-         existingItem.Quantity = updatedItem.Quantity;
-         existingItem.LastUpdated = DateTime.UtcNow;
-
+         existingItem.UpdateFromDto(dto);
+        
          //save changes
           await context.SaveChangesAsync();
 
           logger.LogInformation("Successfully updated item with ID: {ItemId}", id);
-          return Results.Ok(existingItem);
+          return Results.Ok(existingItem.ToResponseDto());
     }
    catch (DbUpdateException ex)
    {
