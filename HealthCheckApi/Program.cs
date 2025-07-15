@@ -3,6 +3,7 @@ using HealthCheckApi.Models;
 using HealthCheckApi.Data;
 using Npgsql;
 using HealthCheckApi.Extensions;
+using HealthCheckApi.DTOs;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -116,7 +117,7 @@ app.MapPost("/items", async (ItemsDbContext context, CreateItemDto dto) => {
         logger.LogWarning("Item creation failed: null item provided");
         return Results.BadRequest("Item data is required");
     }
-    if(string.IsNullOrWhiteSpace(item.Name)) 
+    if(string.IsNullOrWhiteSpace(dto.Name)) 
     {
         logger.LogWarning("Item creation failed: name is null or empty");
         return Results.BadRequest("Name is required");
@@ -136,7 +137,7 @@ app.MapPost("/items", async (ItemsDbContext context, CreateItemDto dto) => {
 
     try 
     {
-        var item = dto.ToItem;
+        var item = dto.ToItem();
         context.Items.Add(item);
         await context.SaveChangesAsync();
         logger.LogInformation("Successfully created item with ID: {ItemId}", item.Id);
@@ -182,7 +183,7 @@ app.MapPut("/items/{id}", async (ItemsDbContext context, int id, UpdateItemDto d
     if (dto.Quantity < 0    )
     {
          logger.LogWarning("Update failed: name too long for ID: {ItemId}", id);
-         return Results.BadRequest("Name cannot exceed 100 characters");
+         return Results.BadRequest("Quantity cannot be negative");
     }
 
     try
@@ -196,7 +197,7 @@ app.MapPut("/items/{id}", async (ItemsDbContext context, int id, UpdateItemDto d
         //update item
          existingItem.UpdateFromDto(dto);
         
-         //save changes
+        //save changes
           await context.SaveChangesAsync();
 
           logger.LogInformation("Successfully updated item with ID: {ItemId}", id);

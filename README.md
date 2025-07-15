@@ -1,6 +1,6 @@
 # 🩺 HealthCheck API — .NET 9 Learning Project
 
-A **RESTful Web API** built with **.NET 8** and **Entity Framework Core**
+A **RESTful Web API** full-stack built with **.NET 9** and **Entity Framework Core**, Postgres, and React.
 
 ---
 
@@ -12,14 +12,21 @@ This project is a hands-on learning experience to falmiliarize myself with key t
 
 ## ⚙️ Core Technologies & Concepts
 
-| Category         | Technologies / Patterns                                        |
-|------------------|---------------------------------------------------------------|
-| 🏗️ API Framework   | [.NET 9 Minimal APIs](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis) |
-| 🗃️ Database Access | Entity Framework Core + SQL Server                          |
-| 🧱 Architecture    | Clean Architecture Principles                                 |
-| 🌐 API Design      | RESTful Endpoint Design                                      |
-| 💉 Patterns        | Built-in Dependency Injection (DI)                           |
+## 🛠️ Stack
+- ASP.NET Core (.NET 9)
+- Entity Framework Core with Postgres
+- RESTful API using Minimal APIs
+- DTOs + Validation
+- Azure-ready configuration
+- HealthCheck endpoints
+- React frontend (in progres)                    |
 
+## 🚀 Features
+- Create, read, update, delete inventory items
+- Proper DTO layering
+- Async database access
+- Structured error handling with logging
+- Health endpoints: `/health`, `/health/ready`, `/health/live`
 ---
 
 ## 📚 Learning Goals
