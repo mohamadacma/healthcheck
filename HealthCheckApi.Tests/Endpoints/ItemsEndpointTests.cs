@@ -100,7 +100,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         }
        
        [Fact]
-       public async GetItems_WithEmptyDatabase_ReturnsEmptyList()
+       public async Task GetItems_WithEmptyDatabase_ReturnsEmptyList()
        {
             //Act
             var response = await _client.GetAsync($"/items");
@@ -113,6 +113,32 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             Assert.Empty(items);
        }
        #endregion;
+
+       #region POST /items/ Tests
+       [Fact]
+       public async Task CreateItem_WithValidData_ReturnsCreated()
+       {
+        //Arrange
+        var dto = new CreateItemDto { Name = "New Item", Quantity = 15 };
+        var json = JsonSerializer.Serialize(dto, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        //Act
+        var response = await _client.PostAsync("/items", content);
+        //Assert
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var createdItem = JsonSerializer.Deserialize<ItemResponseDto>(responseContent, _jsonOptions);
+
+        Assert.Equal("New Item", createdItem.Name);
+        Assert.Equal(15, createdItem.Quantity);
+        Assert.True(createdItem.Id > 0);
+
+        Assert.Equal($"/items/{createdItem.Id}", response.Headers.Location?.ToString());
+       }
+       #endregion;
+
+
 
 
     
