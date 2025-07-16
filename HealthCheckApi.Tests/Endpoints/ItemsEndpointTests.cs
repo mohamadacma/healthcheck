@@ -79,4 +79,40 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     }
     #endregion
 
+       #region GET /items/ Tests
+
+       [Fact]
+       public async GetItems_ReturnsAllItems()
+        {
+            //Arrange 
+            await CreateTestItem("itemOne", 3);
+            await CreateTestItem("itemTwo", 2);
+            //Act
+            var response = await _client.GetAsync($"/items");
+            //Assert
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            var items = JsonSerializer.Deserialize<List<ItemResponseDto>>(content, _jsonOptions);
+
+            Assert.True(item.Count >=2);
+            Assert.Contains(items, i => i.Name == "itemOne");
+            Assert.Contains(items, i => i.Name == "itemTwo");
+        }
+       
+       [Fact]
+       public async GetItems_WithEmptyDatabase_ReturnsEmptyList()
+       {
+            //Act
+            var response = await _client.GetAsync($"/items");
+            //Assert
+            response.EnsureSuccessStatusCode();
+            var content = await response.Content.ReadAsStringAsync();
+            var items = JsonSerializer.Deserialize<List<ItemResponseDto>>(content, _jsonOptions);
+
+            Assert.NotNull(items);
+            Assert.Empty(items);
+       }
+       #endregion;
+
+
     
