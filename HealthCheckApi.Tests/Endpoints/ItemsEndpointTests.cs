@@ -12,7 +12,8 @@ using HealthCheckApi.DTOs;
 
 namespace HealthCheckApi.Tests.Endpoints;
 
-public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>> 
+{
 
     private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
@@ -75,14 +76,14 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         //Act
         var response = await _client.GetAsync($"/items/{nonExistentId}");
         //Assert 
-        Assert.Equal(HttpStatusCode.NotFound, response.statusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
     #endregion
 
        #region GET /items/ Tests
 
        [Fact]
-       public async GetItems_ReturnsAllItems()
+       public async Task GetItems_ReturnsAllItems()
         {
             //Arrange 
             await CreateTestItem("itemOne", 3);
@@ -94,7 +95,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             var content = await response.Content.ReadAsStringAsync();
             var items = JsonSerializer.Deserialize<List<ItemResponseDto>>(content, _jsonOptions);
 
-            Assert.True(item.Count >=2);
+            Assert.True(items.Count >=2);
             Assert.Contains(items, i => i.Name == "itemOne");
             Assert.Contains(items, i => i.Name == "itemTwo");
         }
@@ -290,7 +291,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         [InlineData(0)]
         [InlineData(-1)]
         [InlineData(-999)]
-        public async Task DeleteItem_WithInValidId_ReturnsDeleted(int invalidId)
+        public async Task DeleteItem_WithInValidId_ReturnsBadRequest(int invalidId)
         {
             //Act
             var response = await _client.DeleteAsync($"/items/{invalidId}");
@@ -299,7 +300,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         }
 
         [Fact]
-        public async DeleteItem_WithNonExistentId_ReturnsNotFound()
+        public async Task DeleteItem_WithNonExistentId_ReturnsNotFound()
         {
             //Act
             var response = await _client.DeleteAsync($"/items/999");
@@ -308,6 +309,23 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         }
         
         #endregion;
+
+        #region Helper Methods
+
+        private async Task<Item> CreateTestItem(string name, int quantity)
+        {
+            using var scope = _factory.Services.CreateScope();
+            var context = scope.ServiceProvider.GetRequiredService<ItemsDbContext>();
+            var item = new Item { Name = name, Quantity = quantity };
+            context.Items.Add(item);
+            await context.SaveChangesAsync();
+            return item;
+        }
+        #endregion;
+
+  
+
+}
 
 
 
