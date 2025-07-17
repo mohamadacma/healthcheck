@@ -138,6 +138,51 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
        }
        #endregion;
 
+       [Theory]
+       [InlineData("")] 
+       [InlineData("   ")]
+       [InlineData(null)]
+       public async Task CreateItem_WithInvalidName_ReturnsBadRequest(string invalidName)
+       {
+        //Arrange
+        var dto = new CreateItemDto { Name = invalidName, Quantity = 5 };
+        var json = JsonSerializer.Serialize(dto, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        //Act
+        var response = await _client.PostAsync("/items", content);
+        //Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+       }
+
+       [Fact]
+       public async Task CreateItem_WithNegativeQuantity_ReturnsBadRequest()
+       {
+        //Arrange
+        var dto = new CreateItemDto { Name = "testItem", Quantity = -1 };
+        var json = JsonSerializer.Serialize(dto, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        //Act
+        var response = await _client.PostAsync("/items", content);
+        //Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+       }
+
+       [Fact]
+       public async Task CreateItem_WithLongName_ReturnsBadRequest()
+       {
+        //Arrange
+        var dto = new CreateItemDto { Name = new string('A', 101), Quantity = 5 };
+        var json = JsonSerializer.Serialize(dto, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        //Act
+        var response = await _client.PostAsync("/items", content);
+        //Assert
+         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+       }
+
+       #endregion;
+       
+
 
 
 
