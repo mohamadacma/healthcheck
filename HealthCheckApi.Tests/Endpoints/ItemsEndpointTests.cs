@@ -112,31 +112,32 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             Assert.NotNull(items);
             Assert.Empty(items);
        }
-       #endregion;
+        #endregion;
 
        #region POST /items/ Tests
+
        [Fact]
        public async Task CreateItem_WithValidData_ReturnsCreated()
        {
-        //Arrange
-        var dto = new CreateItemDto { Name = "New Item", Quantity = 15 };
-        var json = JsonSerializer.Serialize(dto, _jsonOptions);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        //Act
-        var response = await _client.PostAsync("/items", content);
-        //Assert
-        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            //Arrange
+            var dto = new CreateItemDto { Name = "New Item", Quantity = 15 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PostAsync("/items", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var createdItem = JsonSerializer.Deserialize<ItemResponseDto>(responseContent, _jsonOptions);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var createdItem = JsonSerializer.Deserialize<ItemResponseDto>(responseContent, _jsonOptions);
 
-        Assert.Equal("New Item", createdItem.Name);
-        Assert.Equal(15, createdItem.Quantity);
-        Assert.True(createdItem.Id > 0);
+            Assert.Equal("New Item", createdItem.Name);
+            Assert.Equal(15, createdItem.Quantity);
+            Assert.True(createdItem.Id > 0);
 
-        Assert.Equal($"/items/{createdItem.Id}", response.Headers.Location?.ToString());
+            Assert.Equal($"/items/{createdItem.Id}", response.Headers.Location?.ToString());
        }
-       #endregion;
+
 
        [Theory]
        [InlineData("")] 
@@ -144,44 +145,170 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
        [InlineData(null)]
        public async Task CreateItem_WithInvalidName_ReturnsBadRequest(string invalidName)
        {
-        //Arrange
-        var dto = new CreateItemDto { Name = invalidName, Quantity = 5 };
-        var json = JsonSerializer.Serialize(dto, _jsonOptions);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        //Act
-        var response = await _client.PostAsync("/items", content);
-        //Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            //Arrange
+            var dto = new CreateItemDto { Name = invalidName, Quantity = 5 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PostAsync("/items", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
        }
 
        [Fact]
        public async Task CreateItem_WithNegativeQuantity_ReturnsBadRequest()
        {
-        //Arrange
-        var dto = new CreateItemDto { Name = "testItem", Quantity = -1 };
-        var json = JsonSerializer.Serialize(dto, _jsonOptions);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        //Act
-        var response = await _client.PostAsync("/items", content);
-        //Assert
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            //Arrange
+            var dto = new CreateItemDto { Name = "testItem", Quantity = -1 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PostAsync("/items", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
        }
 
        [Fact]
        public async Task CreateItem_WithLongName_ReturnsBadRequest()
        {
-        //Arrange
-        var dto = new CreateItemDto { Name = new string('A', 101), Quantity = 5 };
-        var json = JsonSerializer.Serialize(dto, _jsonOptions);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-        //Act
-        var response = await _client.PostAsync("/items", content);
-        //Assert
-         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            //Arrange
+            var dto = new CreateItemDto { Name = new string('A', 101), Quantity = 5 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PostAsync("/items", content);
+            //Assert
+             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
        }
 
+       [Fact]
+       public async Task CreateItem_WithNullDto_ReturnsBadRequest()
+        {
+            //Arrange
+            var content = new StringContent("null", Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PostAsync("/items", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
        #endregion;
-       
+
+       #region PUT /items/{id} Tests
+
+       [Fact]
+       public async Task UpdateItem_WithValidData_ReturnsOk()
+       {
+            //Arrange
+            var item = await CreateTestItem("Existing Item", 5);
+            var dto = new UpdateItemDto { Name = "Updated Item", Quantity = 20 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PutAsync($"/items/{item.Id}", content);
+            //Assert
+            response.EnsureSuccessStatusCode();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var updatedItem = JsonSerializer.Deserialize<ItemResponseDto>(responseContent, _jsonOptions);
+            Assert.Equal(item.Id, updatedItem.Id); 
+            Assert.Equal("Updated Item", updatedItem.Name);
+            Assert.Equal(20, updatedItem.Quantity);
+       }
+
+       [Theory]
+       [InlineData(0)]
+       [InlineData(-1)]
+       public async Task UpdateItem_WithInvalidId_ReturnsBadRequest(int invalidId)
+       {
+            //Arrange
+            var dto = new UpdateItemDto { Name = "Updated Item", Quantity = 20 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PutAsync($"/items/{invalidId}", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+       }
+
+       [Fact]
+        public async Task UpdateItem_WithNonExistentId_ReturnsNotFound()
+        {
+            var dto = new UpdateItemDto { Name = "Updated Item", Quantity = 20 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PutAsync("/items/777", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateItem_WithNullDto_ReturnsBadRequest()
+        {
+            //Arrange
+            var item = await CreateTestItem("Test Item", 5);
+            var content = new StringContent("null", Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PutAsync($"/items/{item.Id}", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task UpdateItem_WithNegativeQuantity_ReturnsBadRequest()
+        {
+            //Arrange
+            var item = await CreateTestItem("Test Item", 5);
+            var dto = new UpdateItemDto { Name = "Updated Item", Quantity = -1 };
+            var json = JsonSerializer.Serialize(dto, _jsonOptions);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            //Act
+            var response = await _client.PutAsync($"/items/{item.Id}", content);
+            //Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        #endregion
+
+        #region DELETE /items/{id} Tests
+
+        [Fact]
+        public async Task DeleteItem_WithValidId_ReturnsDeleted()
+        {
+            //Arrange
+            var item = await CreateTestItem("Item to Delete", 6);
+            //Act
+            var response = await _client.DeleteAsync($"/items/{item.Id}");
+            //Assert
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+            var getResponse = await _client.GetAsync($"/items/{item.Id}");
+            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        [InlineData(-999)]
+        public async Task DeleteItem_WithInValidId_ReturnsDeleted(int invalidId)
+        {
+            //Act
+            var response = await _client.DeleteAsync($"/items/{invalidId}");
+            //Assert
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async DeleteItem_WithNonExistentId_ReturnsNotFound()
+        {
+            //Act
+            var response = await _client.DeleteAsync($"/items/999");
+            //Assert
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+        
+        #endregion;
+
 
 
 
