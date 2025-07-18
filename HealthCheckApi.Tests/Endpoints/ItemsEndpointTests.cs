@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Linq;  
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -13,29 +15,48 @@ using HealthCheckApi.DTOs;
 namespace HealthCheckApi.Tests.Endpoints;
 
 public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+{
 
     private readonly WebApplicationFactory<Program> _factory;
     private readonly HttpClient _client;
     private readonly JsonSerializerOptions _jsonOptions;
+    private readonly string _dbName;
 
     public ItemsEndpointTests(WebApplicationFactory<Program> factory)
     {
+        _dbName = Guid.NewGuid().ToString();
+        
+
         _factory = factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Test");
+                 
             builder.ConfigureServices(services =>
             {
-                var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ItemsDbContext>));
-                if (descriptor != null)
-                 services.Remove(descriptor);
-                 services.AddDbContext<ItemsDbContext>(options =>
-                 options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}"));
-            });
+                var descriptorsToRemove = services
+                .Where(d => 
+                d.ServiceType == typeof(DbContextOptions<ItemsDbContext>) ||
+                d.ServiceType == typeof(ItemsDbContext) ||
+                (d.ServiceType.IsGenericType && d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>)) ||
+                d.ServiceType.Name.Contains("EntityFramework") ||
+                d.ServiceType.Name.Contains("Npgsql")
+                )
+                .ToList();
+            
+                foreach (var descriptor in descriptorsToRemove)
+                
+                    services.Remove(descriptor);
+                
+                services.AddDbContext<ItemsDbContext>(options =>
+                
+                options.UseInMemoryDatabase(_dbName));
         });
-        
+    });  
         _client = _factory.CreateClient();
-
         _jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     }
+    
+
 
     #region GET /items/{id} Tests
 
@@ -50,6 +71,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         response.EnsureSuccessStatusCode();
         var content = await response.Content.ReadAsStringAsync();
         var returnedItem = JsonSerializer.Deserialize<ItemResponseDto>(content, _jsonOptions);
+        Assert.NotNull(returnedItem);
 
         Assert.Equal(item.Id, returnedItem.Id);
         Assert.Equal("Test Item", returnedItem.Name);
@@ -64,7 +86,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         //Act
         var response = await _client.GetAsync($"/items/{invalidId}");
         //Assert 
-        Assert.Equal(HttpStatusCode.BadRequest, response.statusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
@@ -75,14 +97,14 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         //Act
         var response = await _client.GetAsync($"/items/{nonExistentId}");
         //Assert 
-        Assert.Equal(HttpStatusCode.NotFound, response.statusCode);
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
     #endregion
 
        #region GET /items/ Tests
 
        [Fact]
-       public async GetItems_ReturnsAllItems()
+       public async Task GetItems_ReturnsAllItems()
         {
             //Arrange 
             await CreateTestItem("itemOne", 3);
@@ -93,8 +115,8 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             response.EnsureSuccessStatusCode();
             var content = await response.Content.ReadAsStringAsync();
             var items = JsonSerializer.Deserialize<List<ItemResponseDto>>(content, _jsonOptions);
-
-            Assert.True(item.Count >=2);
+            Assert.NotNull(items);
+            Assert.True(items.Count >=2);
             Assert.Contains(items, i => i.Name == "itemOne");
             Assert.Contains(items, i => i.Name == "itemTwo");
         }
@@ -112,7 +134,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             Assert.NotNull(items);
             Assert.Empty(items);
        }
-        #endregion;
+        #endregion
 
        #region POST /items/ Tests
 
@@ -130,6 +152,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 
             var responseContent = await response.Content.ReadAsStringAsync();
             var createdItem = JsonSerializer.Deserialize<ItemResponseDto>(responseContent, _jsonOptions);
+            Assert.NotNull(createdItem);
 
             Assert.Equal("New Item", createdItem.Name);
             Assert.Equal(15, createdItem.Quantity);
@@ -210,6 +233,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             response.EnsureSuccessStatusCode();
             var responseContent = await response.Content.ReadAsStringAsync();
             var updatedItem = JsonSerializer.Deserialize<ItemResponseDto>(responseContent, _jsonOptions);
+            Assert.NotNull(updatedItem);
             Assert.Equal(item.Id, updatedItem.Id); 
             Assert.Equal("Updated Item", updatedItem.Name);
             Assert.Equal(20, updatedItem.Quantity);
@@ -290,7 +314,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         [InlineData(0)]
         [InlineData(-1)]
         [InlineData(-999)]
-        public async Task DeleteItem_WithInValidId_ReturnsDeleted(int invalidId)
+        public async Task DeleteItem_WithInValidId_ReturnsBadRequest(int invalidId)
         {
             //Act
             var response = await _client.DeleteAsync($"/items/{invalidId}");
@@ -299,7 +323,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         }
 
         [Fact]
-        public async DeleteItem_WithNonExistentId_ReturnsNotFound()
+        public async Task DeleteItem_WithNonExistentId_ReturnsNotFound()
         {
             //Act
             var response = await _client.DeleteAsync($"/items/999");
@@ -307,7 +331,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
         
-        #endregion;
+        #endregion
 
         #region Helper Methods
 
@@ -321,7 +345,8 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             return item;
 
         }
-        #endregion;
+        #endregion
+}
 
 
 

@@ -10,8 +10,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddOpenApi(); 
+
+var isTestEnvironment = builder.Environment.EnvironmentName == "Test" || 
+builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
+
+if (isTestEnvironment)
+{
+    builder.Services.AddDbContext<ItemsDbContext>(options =>
+    options.UseInMemoryDatabase("DefaultTestDb"));
+}
+else
+{
 builder.Services.AddDbContext<ItemsDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+}
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ItemsDbContext>();
     
@@ -280,4 +292,6 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
     public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
+
+public partial class Program { }
 

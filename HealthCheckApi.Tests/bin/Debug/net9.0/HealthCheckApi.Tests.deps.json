@@ -2001,6 +2001,7 @@
       "HealthCheckApi/1.0.0": {
         "dependencies": {
           "Microsoft.AspNetCore.OpenApi": "9.0.7",
+          "Microsoft.EntityFrameworkCore.InMemory": "9.0.7",
           "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "9.0.7",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.4"
         },

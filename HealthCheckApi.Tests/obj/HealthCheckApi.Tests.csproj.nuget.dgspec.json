@@ -149,6 +149,10 @@
               "target": "Package",
               "version": "[9.0.7, )"
             },
+            "Microsoft.EntityFrameworkCore.InMemory": {
+              "target": "Package",
+              "version": "[9.0.7, )"
+            },
             "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": {
               "target": "Package",
               "version": "[9.0.7, )"

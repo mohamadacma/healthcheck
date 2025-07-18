@@ -10,6 +10,7 @@
         "dependencies": {
           "Microsoft.AspNetCore.OpenApi": "9.0.7",
           "Microsoft.EntityFrameworkCore.Design": "9.0.7",
+          "Microsoft.EntityFrameworkCore.InMemory": "9.0.7",
           "Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore": "9.0.7",
           "Npgsql.EntityFrameworkCore.PostgreSQL": "9.0.4"
         },
@@ -373,6 +374,19 @@
         },
         "runtime": {
           "lib/net8.0/Microsoft.EntityFrameworkCore.Design.dll": {
+            "assemblyVersion": "9.0.7.0",
+            "fileVersion": "9.0.725.31607"
+          }
+        }
+      },
+      "Microsoft.EntityFrameworkCore.InMemory/9.0.7": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore": "9.0.7",
+          "Microsoft.Extensions.Caching.Memory": "9.0.7",
+          "Microsoft.Extensions.Logging": "9.0.7"
+        },
+        "runtime": {
+          "lib/net8.0/Microsoft.EntityFrameworkCore.InMemory.dll": {
             "assemblyVersion": "9.0.7.0",
             "fileVersion": "9.0.725.31607"
           }
@@ -806,6 +820,13 @@
       "sha512": "sha512-zvZ2/bRwdPrBfQ2fRd2IQL6icyIOtosZSz2QpXtsn7M+c6e4GvpNfpSxBprLfoKhH6NeAFNV9ool0Vp/1DJd/A==",
       "path": "microsoft.entityframeworkcore.design/9.0.7",
       "hashPath": "microsoft.entityframeworkcore.design.9.0.7.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.InMemory/9.0.7": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-/EQbD4/m83r3AW4z69SIwjRvEPFJchhCIQ80DbUiw3H6T2fXEVCf6YjbBlLE6Q/syHYu2JYBScxyAQ4/q8J2xA==",
+      "path": "microsoft.entityframeworkcore.inmemory/9.0.7",
+      "hashPath": "microsoft.entityframeworkcore.inmemory.9.0.7.nupkg.sha512"
     },
     "Microsoft.EntityFrameworkCore.Relational/9.0.7": {
       "type": "package",

@@ -1,5 +1,12 @@
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/.msCoverageSourceRootsMapping_HealthCheckApi.Tests
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/CoverletSourceRootsMapping_HealthCheckApi.Tests
+/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.csproj.AssemblyReference.cache
+/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/MvcTestingAppManifest.json
+/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.GeneratedMSBuildEditorConfig.editorconfig
+/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.AssemblyInfoInputs.cache
+/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.AssemblyInfo.cs
+/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.csproj.CoreCompileInputs.cache
+/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.sourcelink.json
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/HealthCheckApi.deps.json
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/HealthCheckApi.runtimeconfig.json
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/appsettings.Development.json
@@ -444,13 +451,6 @@
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/runtimes/win/lib/net9.0/System.Diagnostics.EventLog.dll
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/HealthCheckApi.dll
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/bin/Debug/net9.0/HealthCheckApi.pdb
-/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.csproj.AssemblyReference.cache
-/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/MvcTestingAppManifest.json
-/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.GeneratedMSBuildEditorConfig.editorconfig
-/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.AssemblyInfoInputs.cache
-/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.AssemblyInfo.cs
-/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.csproj.CoreCompileInputs.cache
-/Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.sourcelink.json
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCh.97642B5D.Up2Date
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/HealthCheckApi.Tests.dll
 /Users/mohamadahmad/workspace/healthcheck/HealthCheckApi.Tests/obj/Debug/net9.0/refint/HealthCheckApi.Tests.dll
