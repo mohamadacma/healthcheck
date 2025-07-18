@@ -47,12 +47,15 @@ jobs:
 
       - name: Restore dependencies
         run: dotnet restore
+        working-directory: HealthCheckApi
 
       - name: Build application
         run: dotnet build --configuration ${{ env.BUILD_CONFIGURATION }} --no-restore
+        working-directory: HealthCheckApi
 
       - name: Run unit and integration tests
         run: dotnet test --configuration ${{ env.BUILD_CONFIGURATION }} --no-build --verbosity normal --collect:"XPlat Code Coverage"
+        working-directory: HealthCheckApi
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=testdb;Username=testuser;Password=testpassword"
 
