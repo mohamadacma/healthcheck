@@ -13,7 +13,7 @@ To fix this:
    builder.UseEnvironment("Test");
 
 2. Removed all existing registrations of ItemsDbContext and its options in the test’s ConfigureServices hook:
-
+    ```csharp
    var toRemove = services.Where(d =>
        d.ServiceType == typeof(DbContextOptions<ItemsDbContext>) ||
        d.ServiceType == typeof(ItemsDbContext) ||
