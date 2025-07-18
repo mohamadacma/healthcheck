@@ -4,12 +4,14 @@ using HealthCheckApi.Data;
 using Npgsql;
 using HealthCheckApi.Extensions;
 using HealthCheckApi.DTOs;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.SwaggerUI;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddOpenApi(); 
+
 
 var isTestEnvironment = builder.Environment.EnvironmentName == "Test" || 
 builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
@@ -26,19 +28,31 @@ builder.Services.AddDbContext<ItemsDbContext>(options =>
 }
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ItemsDbContext>();
-    
 
+builder.Services.AddEndpointsApiExplorer(); 
+builder.Services.AddSwaggerGen(opts =>
+{
+    opts.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Items Management API",
+        Version = "v1.0.0",
+        Description = "RESTful API for managing inventory items " +
+                    "with CRUD operations, health monitoring, and error handling.",
+        Contact = new() { Name = "Moe", Email = "moreborn2021@gmail.com" }
+    });
+});
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(); 
+}
 
 // Get logger 
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
 app.UseHttpsRedirection();
 
 var summaries = new[]
@@ -92,7 +106,16 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
         return Results.Problem("An unexpected error occured", statusCode: 500);
     }
 })
-.WithName("GetItem");
+.WithName("GetItem")
+.WithSummary("Get item by ID")
+.WithDescription("Retrieves a specific item by its unique identifier")
+.Produces<ItemResponseDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound)
+.WithOpenApi(operation => 
+{
+    operation.Parameters[0].Description = "The unique identifier of the item";
+    return operation;
+});
 
 
 //GET to retrieve all items
@@ -117,7 +140,12 @@ app.MapGet("/items", async (ItemsDbContext context) =>
          return Results.Problem("An unexpected error occurred", statusCode: 500);
     }
  })
-    .WithName("GetItems");
+    .WithName("GetItems")
+    .WithSummary("Get all items")
+    .WithDescription("Retrieves a list of all items in the database")
+    .Produces<IEnumerable<ItemResponseDto>>(StatusCodes.Status200OK)
+    .ProducesProblem(StatusCodes.Status500InternalServerError)
+    .WithOpenApi();
 
 
 //POST to create a new item
@@ -171,7 +199,12 @@ app.MapPost("/items", async (ItemsDbContext context, CreateItemDto dto) => {
         return Results.Problem("An unexpected error occurred", statusCode: 500);
     }
 })
-.WithName("CreateItem");
+.WithName("CreateItem")
+.WithSummary("Create a new item")
+.WithDescription("Creates a new item with the provided name and quantity")
+.Produces<ItemResponseDto>(StatusCodes.Status201Created)
+.ProducesValidationProblem()
+.WithOpenApi();
 
 
 //PUT to update item
@@ -231,7 +264,18 @@ app.MapPut("/items/{id}", async (ItemsDbContext context, int id, UpdateItemDto d
          return Results.Problem("An unexpected error occurred", statusCode: 500);
     }
 })
-.WithName("UpdateItem");
+.WithName("UpdateItem")
+.WithSummary("Update an item")
+.WithDescription("Updates an existing item by its ID with the provided name and quantity")
+.Produces<ItemResponseDto>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status404NotFound)
+.ProducesValidationProblem()
+.ProducesProblem(StatusCodes.Status500InternalServerError)
+.WithOpenApi(operation =>
+{
+    operation.Parameters[0].Description = "The unique identifier of the item";
+    return operation;
+});
 
 
 //DELETE to remove item
@@ -278,7 +322,20 @@ app.MapDelete("/items/{id}", async(ItemsDbContext context, int id)=>
         return Results.Problem("An unexpected error occurred", statusCode: 500);
     }
 })
-.WithName("DeleteItem");
+.WithName("DeleteItem")
+.WithSummary("Delete an item")
+.WithDescription("Deletes an item from the database by its unique identifier")
+.Produces(StatusCodes.Status204NoContent)
+.Produces(StatusCodes.Status404NotFound)
+.ProducesValidationProblem()
+.ProducesProblem(StatusCodes.Status500InternalServerError)
+.WithOpenApi(operation =>
+{
+    operation.Parameters[0].Description = "The unique identifier of the item";
+    return operation;
+});
+
+
 
 //endpoints to monitor app and db health
 app.MapHealthChecks("/health");
