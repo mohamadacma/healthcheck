@@ -102,6 +102,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     #endregion
 
        #region GET /items/ Tests
+       public record PagedResponse<T>(IEnumerable<T> Data, int Page, int PageSize, int TotalCount);
 
        [Fact]
        public async Task GetItems_ReturnsAllItems()
@@ -113,12 +114,14 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             var response = await _client.GetAsync($"/items");
             //Assert
             response.EnsureSuccessStatusCode();
+
             var content = await response.Content.ReadAsStringAsync();
-            var items = JsonSerializer.Deserialize<List<ItemResponseDto>>(content, _jsonOptions);
-            Assert.NotNull(items);
-            Assert.True(items.Count >=2);
-            Assert.Contains(items, i => i.Name == "itemOne");
-            Assert.Contains(items, i => i.Name == "itemTwo");
+            var items = JsonSerializer.Deserialize<PagedResponse<ItemResponseDto>>(content, _jsonOptions);
+            Assert.Equal(1,items.Page);
+            Assert.Equal(10, items.PageSize);
+            Assert.Equal(2, items.TotalCount);
+            Assert.Contains(items.Data, i => i.Name == "itemOne");
+            Assert.Contains(items.Data, i => i.Name == "itemTwo");
         }
        
        [Fact]
@@ -128,11 +131,12 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             var response = await _client.GetAsync($"/items");
             //Assert
             response.EnsureSuccessStatusCode();
-            var content = await response.Content.ReadAsStringAsync();
-            var items = JsonSerializer.Deserialize<List<ItemResponseDto>>(content, _jsonOptions);
 
-            Assert.NotNull(items);
-            Assert.Empty(items);
+            var content = await response.Content.ReadAsStringAsync();
+            var items = JsonSerializer.Deserialize<PagedResponse<ItemResponseDto>>(content, _jsonOptions);
+
+            Assert.Empty(items.Data);
+            Assert.Equal(0, items.TotalCount);
        }
         #endregion
 

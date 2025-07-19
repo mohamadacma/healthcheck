@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HealthCheckApi.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7073e6f3c414de22e68e27362dcdabf599035aa8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+37958a0fc5bc27190e98a60c4876931d34c7d9ef")]
 [assembly: System.Reflection.AssemblyProductAttribute("HealthCheckApi.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HealthCheckApi.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

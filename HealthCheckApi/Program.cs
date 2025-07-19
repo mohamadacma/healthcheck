@@ -29,6 +29,7 @@ builder.Services.AddDbContext<ItemsDbContext>(options =>
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ItemsDbContext>();
 
+//Swagger
 builder.Services.AddEndpointsApiExplorer(); 
 builder.Services.AddSwaggerGen(opts =>
 {
@@ -122,35 +123,42 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
     return operation;
 });
 
+// GET / items  ( filtering & pagination)
+app.MapGet("/items", async (
+            ItemsDbContext db,
+            string? search, 
+            int? minQuantity,
+            int? maxQuantity,
+            int  page = 1,
+            int  pageSize = 10) =>
+            {
+                if(page <= 0 || pageSize <= 0 || pageSize > 100)
+                return Results.BadRequest("Invalid paging parameters");
 
-//GET to retrieve all items
-app.MapGet("/items", async (ItemsDbContext context) =>
- {
-    logger.LogInformation("Retreiving all items");
+                IQueryable<Item> q = db.Items;
 
-    try 
-    {
-        var items= await context.Items.ToListAsync();
-        logger.LogInformation("Successfully retrieved {ItemCount} items", items.Count);
-        return Results.Ok(items.Select(item => item.ToResponseDto()));
-    }
-    catch (NpgsqlException ex)
-    {
-        logger.LogError(ex, "Database error occured while retrieving all items");
-        return Results.Problem("Database error occurred", statusCode: 500);
-    }
-    catch (Exception ex)
-    {
-         logger.LogError(ex, "Unexpected error occurred while retrieving all items");
-         return Results.Problem("An unexpected error occurred", statusCode: 500);
-    }
- })
-    .WithName("GetItems")
-    .WithSummary("Get all items")
-    .WithDescription("Retrieves a list of all items in the database")
-    .Produces<IEnumerable<ItemResponseDto>>(StatusCodes.Status200OK)
-    .ProducesProblem(StatusCodes.Status500InternalServerError)
-    .WithOpenApi();
+                if(!string.IsNullOrWhiteSpace(search))
+                    q = q.Where(i => i.Name.Contains(search));
+                if(minQuantity.HasValue)
+                    q = q.Where(i => i.Quantity >= minQuantity);
+                if(maxQuantity.HasValue)
+                    q = q.Where(i => i.Quantity <= maxQuantity);
+
+                int total = await q.CountAsync();
+
+                var items = await q.OrderBy(i => i.Id)
+                                    .Skip((page - 1) * pageSize)
+                                    .Take(pageSize)
+                                    .Select(i => i.ToResponseDto())
+                                    .ToListAsync();
+                var response = new PagedResponse<ItemResponseDto>(items, page, pageSize, total);
+
+                return Results.Ok(response);
+            })
+            .WithName("GetItems")
+            .WithSummary("List items with optional filters & paging")
+            .Produces<PagedResponse<ItemResponseDto>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status400BadRequest);
 
 
 //POST to create a new item
