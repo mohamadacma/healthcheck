@@ -45,6 +45,11 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    //Dev only automation
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ItemsDbContext>();
+    context.Database.Migrate();
+
     app.UseSwagger();
     app.UseSwaggerUI(); 
 }
