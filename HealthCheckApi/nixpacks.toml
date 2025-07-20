@@ -1,0 +1,2 @@
+[nixpacks]
+nixpkgs = "nixpkgs#dotnet-sdk_9"
