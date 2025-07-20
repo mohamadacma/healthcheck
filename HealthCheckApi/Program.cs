@@ -12,6 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+//Railway
+
 
 var isTestEnvironment = builder.Environment.EnvironmentName == "Test" || 
 builder.Configuration.GetValue<bool>("UseInMemoryDatabase");

@@ -117,6 +117,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
 
             var content = await response.Content.ReadAsStringAsync();
             var items = JsonSerializer.Deserialize<PagedResponse<ItemResponseDto>>(content, _jsonOptions);
+            Assert.NotNull(items);
             Assert.Equal(1,items.Page);
             Assert.Equal(10, items.PageSize);
             Assert.Equal(2, items.TotalCount);
@@ -135,6 +136,7 @@ public class ItemsEndpointTests : IClassFixture<WebApplicationFactory<Program>>
             var content = await response.Content.ReadAsStringAsync();
             var items = JsonSerializer.Deserialize<PagedResponse<ItemResponseDto>>(content, _jsonOptions);
 
+            Assert.NotNull(items);
             Assert.Empty(items.Data);
             Assert.Equal(0, items.TotalCount);
        }
