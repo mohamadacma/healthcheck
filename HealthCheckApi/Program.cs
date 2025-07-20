@@ -12,7 +12,20 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-//Railway
+//Bind Kestrel
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+if(!string.IsNullOrEmpty(port))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
+//configure Database
+var connectionString =builder.Configuration.GetConnectionString("DefaultConnection");
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+if (!string.IsNullOrEmpty(databaseUrl))
+{
+    connectionString = ConvertDbUrlToNpgsql(databaseUrl);
+}
+
+
 
 
 var isTestEnvironment = builder.Environment.EnvironmentName == "Test" || 
@@ -55,6 +68,15 @@ if (app.Environment.IsDevelopment())
 
     app.UseSwagger();
     app.UseSwaggerUI(); 
+}
+//helper method
+static string ConvertDbUrlToNpgsql(string dbUrl)
+{
+    //format: postgres://user:pass@host:port/db
+    var uri = new Uri(dbUrl);
+    var user = uri.UserInfo.Split(':')[0];
+    var pass = uri.UserInfo.Split(':')[1];
+    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};UserName={user};Password={pass};Ssl Mode=Require;Trust Server Certificate=true";
 }
 
 // Get logger 
