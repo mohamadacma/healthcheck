@@ -12,34 +12,34 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-//Bind Kestrel
+//Bind Kestrel to Railway
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-if(!string.IsNullOrEmpty(port))
-    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
-//configure Database
-var connectionString =builder.Configuration.GetConnectionString("DefaultConnection");
+//configure connection string; DatabaseURL-->Npgsql 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 if (!string.IsNullOrEmpty(databaseUrl))
 {
     connectionString = ConvertDbUrlToNpgsql(databaseUrl);
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
 }
 
 
 
 
 var isTestEnvironment = builder.Environment.EnvironmentName == "Test" || 
-builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
+                        builder.Configuration.GetValue<bool>("UseInMemoryDatabase");
 
 if (isTestEnvironment)
 {
     builder.Services.AddDbContext<ItemsDbContext>(options =>
-    options.UseInMemoryDatabase("DefaultTestDb"));
+        options.UseInMemoryDatabase("DefaultTestDb"));
 }
 else
 {
 builder.Services.AddDbContext<ItemsDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 }
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<ItemsDbContext>();
@@ -59,13 +59,13 @@ builder.Services.AddSwaggerGen(opts =>
 });
 var app = builder.Build();
 
+
+using var scope = app.Services.CreateScope();
+var context = scope.ServiceProvider.GetRequiredService<ItemsDbContext>();
+context.Database.Migrate();
+
 if (app.Environment.IsDevelopment())
 {
-    //Dev only automation
-    using var scope = app.Services.CreateScope();
-    var context = scope.ServiceProvider.GetRequiredService<ItemsDbContext>();
-    context.Database.Migrate();
-
     app.UseSwagger();
     app.UseSwaggerUI(); 
 }
@@ -76,7 +76,7 @@ static string ConvertDbUrlToNpgsql(string dbUrl)
     var uri = new Uri(dbUrl);
     var user = uri.UserInfo.Split(':')[0];
     var pass = uri.UserInfo.Split(':')[1];
-    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};UserName={user};Password={pass};Ssl Mode=Require;Trust Server Certificate=true";
+    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={user};Password={pass};Ssl Mode=Require;Trust Server Certificate=true";
 }
 
 // Get logger 
