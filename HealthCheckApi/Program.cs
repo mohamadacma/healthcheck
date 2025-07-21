@@ -17,14 +17,16 @@ var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 //configure connection string; DatabaseURL-->Npgsql 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-if (!string.IsNullOrEmpty(databaseUrl))
-{
-    connectionString = ConvertDbUrlToNpgsql(databaseUrl);
-    builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
-}
 
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var connectionString = !string.IsNullOrEmpty(databaseUrl)
+    ? ConvertDbUrlToNpgsql(databaseUrl)
+    : builder.Configuration.GetConnectionString("DefaultConnection");
+
+if(string.IsNullOrEmpty(connectionString))
+    Throw new InvalidOperationException("No database connection string configured.");
+
+builder.Configuration["ConnectionStrings: DefaultConnection"] = connectionString;
 
 
 
@@ -70,13 +72,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(); 
 }
 //helper method
-static string ConvertDbUrlToNpgsql(string dbUrl)
+static string ConvertDbUrlToNpgsql(string url)
 {
     //format: postgres://user:pass@host:port/db
-    var uri = new Uri(dbUrl);
+    var uri = new Uri(url);
     var user = uri.UserInfo.Split(':')[0];
     var pass = uri.UserInfo.Split(':')[1];
-    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={user};Password={pass};Ssl Mode=Require;Trust Server Certificate=true";
+    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={user};Password={pass};SslMode=Require;Trust Server Certificate=true";
 }
 
 // Get logger 
