@@ -24,7 +24,7 @@ var connectionString = !string.IsNullOrEmpty(databaseUrl)
     : builder.Configuration.GetConnectionString("DefaultConnection");
 
 if(string.IsNullOrEmpty(connectionString))
-    Throw new InvalidOperationException("No database connection string configured.");
+    throw new InvalidOperationException("No database connection string configured.");
 
 builder.Configuration["ConnectionStrings: DefaultConnection"] = connectionString;
 
