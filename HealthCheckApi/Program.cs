@@ -23,7 +23,7 @@ var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 var connectionString = !string.IsNullOrEmpty(databaseUrl)
     ? ConvertDbUrlToNpgsql(databaseUrl)
     : builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine($"DefaultConnection: {defaultConnection}");
+    
 
 if(string.IsNullOrEmpty(connectionString))
 {
