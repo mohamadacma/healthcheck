@@ -19,15 +19,16 @@ builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 //configure connection string; DatabaseURL-->Npgsql 
 
 var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-Console.WriteLine($"DATABASE_URL: {databaseUrl}");
+
 var connectionString = !string.IsNullOrEmpty(databaseUrl)
     ? ConvertDbUrlToNpgsql(databaseUrl)
     : builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"DefaultConnection: {defaultConnection}");
 
 if(string.IsNullOrEmpty(connectionString))
-    Console.WriteLine("No valid connection string found");
+{
     throw new InvalidOperationException("No database connection string configured.");
+}
 
 builder.Configuration["ConnectionStrings: DefaultConnection"] = connectionString;
 
