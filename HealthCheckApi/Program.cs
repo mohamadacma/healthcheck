@@ -27,7 +27,7 @@ if (!string.IsNullOrEmpty(databaseUrl))
 }
 else 
 {
-    connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 }
 
 if (string.IsNullOrEmpty(connectionString))
