@@ -6,6 +6,7 @@ using HealthCheckApi.Extensions;
 using HealthCheckApi.DTOs;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerUI;
+using System.IdentityModel.Tokens.Jwt;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -68,6 +69,29 @@ builder.Services.AddSwaggerGen(opts =>
         Contact = new() { Name = "Moe", Email = "moreborn2021@gmail.com" }
     });
 });
+
+//configure JWT authentication
+var jwt = builder. Configuration.GetSection("JwtSettings");
+var key = Encoding.UTF8.GetBytes(jwt["SecretKey"]!);
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            validateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(key), 
+            ValidateIssuer = true,
+            ValidIssuer = jwt["Issuer"], 
+            ValidateAudience = true,
+            ValidAudience = jwt["Audience"],
+            ValidateLifetime = true, 
+            CLockSkew = TimeSpan.Zero
+        };
+    });
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<TokenService>();
+
 var app = builder.Build();
 
 
@@ -95,6 +119,10 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 var summaries = new[]
 {

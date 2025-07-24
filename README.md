@@ -19,6 +19,9 @@ This project is a hands-on learning experience to falmiliarize myself with key t
 - DTOs + Validation
 - Azure-ready configuration
 - HealthCheck endpoints
+- CI/CD with GitHub Actions
+- Deployed to Railway
+- JWT authentication (coming soon)
 - React frontend (in progres)                    |
 
 ## 🚀 Features
@@ -29,9 +32,13 @@ This project is a hands-on learning experience to falmiliarize myself with key t
 - Health endpoints: `/health`, `/health/ready`, `/health/live`
 ---
 
-## 📚 Learning Goals
+## 📚  Learnings
 
-- Build scalable and maintainable APIs using **.NET 9 Minimal APIs**
+- Build scalable and maintainable API using **.NET 9 Minimal APIs**
+- configure production-ready PostgreSQL DBs
+- Deploy with Docker and Railway
+- Implement API documentations with swagger
+- Set up GitHub Actions for CI/CD
 - Apply **Clean Architecture** for separation of concerns
 - Leverage **Entity Framework Core** for database interactions
 - Understand and apply **Dependency Injection** in real-world projects
