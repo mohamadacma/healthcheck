@@ -4,8 +4,8 @@ namespace HealthCheckApi.DTOs;
 /// <summary>
 /// Data transfer object for creating a new item
 /// </summary>
-public class CreateItemDto
-{
+public record CreateItemDto(
+
     /// <summary>
     /// The name of the item (required, max 100 characters)
     /// </summary>
@@ -14,4 +14,4 @@ public class CreateItemDto
     /// The quantity of the item (must be non-negative)
     /// </summary>
     public int Quantity { get; set; }
-}
+);

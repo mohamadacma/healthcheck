@@ -150,4 +150,6 @@ namespace HealthCheckApi.Services
             return true;
         }
     }
+    }
+}
 
