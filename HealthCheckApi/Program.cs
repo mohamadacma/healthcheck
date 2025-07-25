@@ -11,7 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 
 //Bind Kestrel to Railway
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
@@ -186,6 +186,102 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
     operation.Parameters[0].Description = "The unique identifier of the item";
     return operation;
 });
+
+// Register endpoint 
+app.MapPost("/auth/register", async (RegisterRequest request, UserService userService, TokenService tokenService) =>
+{
+    logger.LogInformation("Registration attempt for email: {Email}", request.Email);
+
+    if(string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password) || string.IsNullOrEmpty(request.Name))
+    {
+        return Results.BadRequest("Name, email, and password are required");
+    }
+
+    try
+    {
+        var createUserDto = new createUserDto(request.Name, request.Email, request.Password);
+        var user = await userService.CreateUserAsync(createUserDto);
+
+        if(user == null)
+        {
+            logger.LogWarning("Registration failed: User already exists with email {Email}", request.Email);
+            return Results.Conflict("User with this email already exists");
+        }
+
+        //generate new token
+        var token = tokenService.GenerateToken(user.Id.Tostring(), user.Email, new[]{user.Role});
+        var expiresAt = DateTime.UtcNow.AddMinutes(60);
+
+        logger.LogInformation("User registered successfully: {UserId}", user.Id);
+
+        return Results.Created($"/users/{user.Id}", new LoginResponse(
+            token,
+            user.Email,
+            user.Name,
+            user.Role,
+            expiresAt
+        ));
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error during registration for email: {Email}", request.Email);
+        return Results.Problem("An error occured during registration", statusCode: 500);
+    }
+})
+.WithName("Register")
+.WithSummary("User registration")
+.WithDescription("registers a new user and return a JWT token")
+.Produces<LoginResponse>(Statuscodes.Status201Created)
+.Produces(StatusCodes.Status400BadRequest)
+.Produces(StatuusCodes.Status409Conflict)
+.WithOpenApi();
+
+//Login endpoint
+app.MapPost("auth/login", async (LoginRequest request, UserService userService, TokenService tokenService) =>
+{
+    logger.LogInformation("Login attempt for email: {Email}", request.Email);
+
+    if(string.IsNullOrEmpty(request.Email) || string.IsNullOrEmpty(request.Password))
+    {
+        return Results.BadRequest("Email and Password are required");
+    }
+
+    try
+    {
+        var user = await userService.ValidateUserAsync(request.Email, request.Password);
+        if(user == null)
+        {
+            logger.LogWarning("login failed for email: {Email}", request.Email);
+            return Results.Unauthorized;
+        }
+
+        //generate token
+        var token = tokenService.GenerateToken(user.Id.Tostring(), user.Email, new[]{user.Role});
+        var expiresAt = DateTime.UtcNow.AddMinutes(60);
+
+        logger.LogInformation("User logged in successfully: {UserId}", user.Id);
+
+        return Results.Ok(new LoginResponse(
+            token,
+            user.Email,
+            user.Name,
+            user.Role,
+            expiresAt
+        ));
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error during login for email: {Email}", request.Email);
+        return Results.Problem("An error occured during login", statusCode: 500);
+    }
+})
+.WithName("Login")
+.WithSummary("User login")
+.WithDescription("AUthenticates user and return jwt")
+.Produces<LoginResponse>(StatusCodes.Status400BadRequest)
+.Produces(StatusCodes.status401Unauthorized)
+.WithOpenApi();
+
 
 // GET / items  ( filtering & pagination)
 app.MapGet("/items", async (
