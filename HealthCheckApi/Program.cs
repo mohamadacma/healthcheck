@@ -91,6 +91,7 @@ builder.Services.AddAuthentication("Bearer")
     });
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<UserService>();
 
 var app = builder.Build();
 
