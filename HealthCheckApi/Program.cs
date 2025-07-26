@@ -282,6 +282,40 @@ app.MapPost("auth/login", async (LoginRequest request, UserService userService, 
 .Produces(StatusCodes.status401Unauthorized)
 .WithOpenApi();
 
+//Get current user info
+app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) =>
+{
+    var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    if(string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int UserId))
+    {
+        return Results.Unauthorized;
+    }
+
+    try
+    {
+        var user = await userService.GetUserByIdAsync(UserId);
+        if (user ==null)
+        {
+            return Results.NotFound("User not found");
+        }
+
+        return Results.Ok(user.ToResponseDto());
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Error retreiving user profile for userId: {UserId}", userId);
+        return Results.Problem("An error occured while retreving user Profile", statusCode: 500);
+    }
+})
+.RequireAuthorization()
+.WithName("GetCurrentUser")
+.WithSummary("Get current user profile")
+.WithDescription("Returns the profile of the currently authenticated user")
+.Produces(StatusCodes.status401Unauthorized)
+.Produces(StatusCodes.Status404NotFound)
+.WithOpenApi();
+
 
 // GET / items  ( filtering & pagination)
 app.MapGet("/items", async (
