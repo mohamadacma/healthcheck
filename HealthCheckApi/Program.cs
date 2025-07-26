@@ -1,12 +1,16 @@
 using Microsoft.EntityFrameworkCore;
 using HealthCheckApi.Models;
 using HealthCheckApi.Data;
+using HealthCheckApi.Services;
 using Npgsql;
 using HealthCheckApi.Extensions;
 using HealthCheckApi.DTOs;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerUI;
 using System.IdentityModel.Tokens.Jwt;
+using System.Text;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -71,7 +75,7 @@ builder.Services.AddSwaggerGen(opts =>
 });
 
 //configure JWT authentication
-var jwt = builder. Configuration.GetSection("JwtSettings");
+var jwt = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwt["SecretKey"]!);
 
 builder.Services.AddAuthentication("Bearer")
@@ -79,14 +83,14 @@ builder.Services.AddAuthentication("Bearer")
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            validateIssuerSigningKey = true,
+            ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(key), 
             ValidateIssuer = true,
             ValidIssuer = jwt["Issuer"], 
             ValidateAudience = true,
             ValidAudience = jwt["Audience"],
             ValidateLifetime = true, 
-            CLockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero
         };
     });
 builder.Services.AddAuthorization();
@@ -199,7 +203,7 @@ app.MapPost("/auth/register", async (RegisterRequest request, UserService userSe
 
     try
     {
-        var createUserDto = new createUserDto(request.Name, request.Email, request.Password);
+        var createUserDto = new CreateUserDto(request.Name, request.Email, request.Password);
         var user = await userService.CreateUserAsync(createUserDto);
 
         if(user == null)
@@ -231,13 +235,13 @@ app.MapPost("/auth/register", async (RegisterRequest request, UserService userSe
 .WithName("Register")
 .WithSummary("User registration")
 .WithDescription("registers a new user and return a JWT token")
-.Produces<LoginResponse>(Statuscodes.Status201Created)
+.Produces<LoginResponse>(StatusCodes.Status201Created)
 .Produces(StatusCodes.Status400BadRequest)
-.Produces(StatuusCodes.Status409Conflict)
+.Produces(StatusCodes.Status409Conflict)
 .WithOpenApi();
 
 //Login endpoint
-app.MapPost("auth/login", async (LoginRequest request, UserService userService, TokenService tokenService) =>
+app.MapPost("/auth/login", async (LoginRequest request, UserService userService, TokenService tokenService) =>
 {
     logger.LogInformation("Login attempt for email: {Email}", request.Email);
 
@@ -252,7 +256,7 @@ app.MapPost("auth/login", async (LoginRequest request, UserService userService, 
         if(user == null)
         {
             logger.LogWarning("login failed for email: {Email}", request.Email);
-            return Results.Unauthorized;
+            return Results.Unauthorized();
         }
 
         //generate token
@@ -278,7 +282,8 @@ app.MapPost("auth/login", async (LoginRequest request, UserService userService, 
 .WithName("Login")
 .WithSummary("User login")
 .WithDescription("AUthenticates user and return jwt")
-.Produces<LoginResponse>(StatusCodes.Status400BadRequest)
+.Produces<LoginResponse>(StatusCodes.Status200OK)
+.Produces(StatusCodes.Status400BadRequest)
 .Produces(StatusCodes.status401Unauthorized)
 .WithOpenApi();
 
@@ -289,12 +294,12 @@ app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) 
 
     if(string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int UserId))
     {
-        return Results.Unauthorized;
+        return Results.Unauthorized();
     }
 
     try
     {
-        var user = await userService.GetUserByIdAsync(UserId);
+        var user = await userService.GetUserByIdAsync(userId);
         if (user ==null)
         {
             return Results.NotFound("User not found");
@@ -312,6 +317,7 @@ app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) 
 .WithName("GetCurrentUser")
 .WithSummary("Get current user profile")
 .WithDescription("Returns the profile of the currently authenticated user")
+.Produces<LoginResponse>(StatusCodes.Status200OK)
 .Produces(StatusCodes.status401Unauthorized)
 .Produces(StatusCodes.Status404NotFound)
 .WithOpenApi();
