@@ -72,6 +72,29 @@ builder.Services.AddSwaggerGen(opts =>
                     "with CRUD operations, health monitoring, and error handling.",
         Contact = new() { Name = "Moe", Email = "moreborn2021@gmail.com" }
     });
+
+    //Add JWT to swagger
+    opts.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    opts.AddSecurityRequirement(new OpenApiSecurityRequirement)
+    {
+        new OpenApiSecurityScheme
+        {
+            Reference = new OpenApiReference
+            {
+                Type = Reference.SecurityScheme,
+                Id = "Bearer"
+            }
+        },
+        new string[] {}
+    }
 });
 
 //configure JWT authentication
@@ -93,7 +116,13 @@ builder.Services.AddAuthentication("Bearer")
             ClockSkew = TimeSpan.Zero
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AllRoles", policy => policy.RequireRole("Admin","Pharmacist", "Nurse", "Physician", "SupplyChain", "Clerical", "User"));
+    options.AddPolicy("ModifyInventory", policy => policy.RequireRole("Admin", "Pharmacist", "SupplyChain", "User"));
+    options.AddPolicy("ViewOnly", policy => policy.RequireRole("Physician", "Clerical"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+});
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<UserService>();
 
@@ -180,6 +209,7 @@ app.MapGet("/items/{id}", async (ItemsDbContext context, int id) =>
         return Results.Problem("An unexpected error occured", statusCode: 500);
     }
 })
+.RequireAuthorization("AllRoles")
 .WithName("GetItem")
 .WithSummary("Get item by ID")
 .WithDescription("Retrieves a specific item by its unique identifier")
@@ -313,7 +343,7 @@ app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) 
         return Results.Problem("An error occured while retreving user Profile", statusCode: 500);
     }
 })
-.RequireAuthorization()
+.RequireAuthorization("All Roles")
 .WithName("GetCurrentUser")
 .WithSummary("Get current user profile")
 .WithDescription("Returns the profile of the currently authenticated user")
@@ -355,6 +385,7 @@ app.MapGet("/items", async (
 
                 return Results.Ok(response);
             })
+            .RequireAuthorization("AllRoles")
             .WithName("GetItems")
             .WithSummary("List items with optional filters & paging")
             .Produces<PagedResponse<ItemResponseDto>>(StatusCodes.Status200OK)
@@ -412,10 +443,13 @@ app.MapPost("/items", async (ItemsDbContext context, CreateItemDto dto) => {
         return Results.Problem("An unexpected error occurred", statusCode: 500);
     }
 })
+.RequireAuthorization("ModifyInventory")
 .WithName("CreateItem")
 .WithSummary("Create a new item")
 .WithDescription("Creates a new item with the provided name and quantity")
 .Produces<ItemResponseDto>(StatusCodes.Status201Created)
+.Produces(StatusCodes.Status401Unauthorized)
+.Produces(StatusCodes.Status403Forbidden)
 .ProducesValidationProblem()
 .WithOpenApi();
 
@@ -477,11 +511,13 @@ app.MapPut("/items/{id}", async (ItemsDbContext context, int id, UpdateItemDto d
          return Results.Problem("An unexpected error occurred", statusCode: 500);
     }
 })
+.RequireAuthorization("ModifyInventory")
 .WithName("UpdateItem")
 .WithSummary("Update an item")
 .WithDescription("Updates an existing item by its ID with the provided name and quantity")
 .Produces<ItemResponseDto>(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status404NotFound)
+.Produces(StatusCodes.Status401Unauthorized)
 .ProducesValidationProblem()
 .ProducesProblem(StatusCodes.Status500InternalServerError)
 .WithOpenApi(operation =>
@@ -535,6 +571,7 @@ app.MapDelete("/items/{id}", async(ItemsDbContext context, int id)=>
         return Results.Problem("An unexpected error occurred", statusCode: 500);
     }
 })
+.RequireAuthorization("AdminOnly")
 .WithName("DeleteItem")
 .WithSummary("Delete an item")
 .WithDescription("Deletes an item from the database by its unique identifier")
