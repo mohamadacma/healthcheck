@@ -17,4 +17,9 @@ public static class ItemExtensions
 
     public static ItemResponseDto ToResponseDto(this Item item) =>
         new ItemResponseDto { Id = item.Id, Name = item.Name, Quantity = item.Quantity };
+
+    public static UserResponseDto ToResponseDto(this User user) =>
+        new UserResponseDto { Id = user.Id, Name = user.Name, Email = user.Email, Roles = user.Roles, CreatedAt = user.CreatedAt};
+
+ 
 }

@@ -89,7 +89,7 @@ builder.Services.AddSwaggerGen(opts =>
         {
             Reference = new OpenApiReference
             {
-                Type = Reference.SecurityScheme,
+                Type = ReferenceType.SecurityScheme,
                 Id = "Bearer"
             }
         },
@@ -243,7 +243,7 @@ app.MapPost("/auth/register", async (RegisterRequest request, UserService userSe
         }
 
         //generate new token
-        var token = tokenService.GenerateToken(user.Id.Tostring(), user.Email, new[]{user.Role});
+        var token = tokenService.GenerateToken(user.Id.ToString(), user.Email, new[]{user.Role});
         var expiresAt = DateTime.UtcNow.AddMinutes(60);
 
         logger.LogInformation("User registered successfully: {UserId}", user.Id);
@@ -329,7 +329,7 @@ app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) 
 
     try
     {
-        var user = await userService.GetUserByIdAsync(userId);
+        var user = await userService.GetUserByIdAsync(UserId);
         if (user ==null)
         {
             return Results.NotFound("User not found");
@@ -343,12 +343,12 @@ app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) 
         return Results.Problem("An error occured while retreving user Profile", statusCode: 500);
     }
 })
-.RequireAuthorization("All Roles")
+.RequireAuthorization("AllRoles")
 .WithName("GetCurrentUser")
 .WithSummary("Get current user profile")
 .WithDescription("Returns the profile of the currently authenticated user")
 .Produces<LoginResponse>(StatusCodes.Status200OK)
-.Produces(StatusCodes.status401Unauthorized)
+.Produces(StatusCodes.Status401Unauthorized)
 .Produces(StatusCodes.Status404NotFound)
 .WithOpenApi();
 

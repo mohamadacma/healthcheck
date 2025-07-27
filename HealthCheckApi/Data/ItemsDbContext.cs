@@ -16,6 +16,9 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.Property(e => e.Name)
             .IsRequired()
             .HasMaxLength(100);
+        entity.Property(e => e.Quantity)
+            .IsRequired()
+            .HasDefaultValue(0);
     });
     modelBuilder.Entity<User>(entity =>
     {
@@ -26,6 +29,19 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.Property(e => e.Email)
             .IsRequired()
             .HasMaxLength(255);
+
+        entity.Property(e => e.Email)
+            .IsUnique();
+            
+        entity.Property(e => e.PasswordHash)
+            .IsRequired();
+
+        entity.Property(e => e.Roles)
+        .HasConversion(
+            v => string.Join(",", v),
+            v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .IsRequired()
+        );
     })
 }
 }
