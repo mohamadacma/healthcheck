@@ -30,7 +30,7 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
             .IsRequired()
             .HasMaxLength(255);
 
-        entity.Property(e => e.Email)
+        entity.HasIndex(e => e.Email)
             .IsUnique();
             
         entity.Property(e => e.PasswordHash)
@@ -39,9 +39,9 @@ protected override void OnModelCreating(ModelBuilder modelBuilder)
         entity.Property(e => e.Roles)
         .HasConversion(
             v => string.Join(",", v),
-            v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-            .IsRequired()
-        );
-    })
+            v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+            .IsRequired();
+        
+    });
 }
 }

@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using HealthCheckApi.Models;
+using HealthCheckApi.DTOs;
 using HealthCheckApi.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,19 +27,22 @@ namespace  HealthCheckApi.Services
             return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
         }
 
-        public async Task<User?> CreateUserAsync(string name, string email, string password)
+        public async Task<User?> CreateUserAsync(CreateUserDto dto)
         {
-            if (await _context.Users.AnyAsync(u => u.Email == email))
+            if (await _context.Users.AnyAsync(u => u.Email == dto.Email))
             return null;
+
+            if(dto.Roles == null || !dto.Roles.Any())
+                dto = dto with {Roles = new List<string> {"User"} };
 
             var user = new User
             {
-                Name = name,
-                Email = email,
-                PasswordHash = HashPassword(password),
-                Roles = new List<string> { "User"},
+                Name = dto.Name,
+                Email = dto.Email,
+                PasswordHash = HashPassword(dto.Password),
+                Roles = dto.Roles,
                 CreatedAt = DateTime.UtcNow,
-                isActive = true
+                IsActive = true
             };
 
             _context.Users.Add(user);
@@ -52,9 +56,15 @@ namespace  HealthCheckApi.Services
             if(user == null || !VerifyPassword(password, user.PasswordHash))
                 return null;
             
-            user.LastLoginAt = DateTime.UtcNow;
+            
             await _context.SaveChangesAsync();
             return user;
+        }
+
+        public async Task<User> GetUserByIdAsync(int userId)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Id == userId && u.IsActive);
         }
        
     }

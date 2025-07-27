@@ -83,8 +83,9 @@ builder.Services.AddSwaggerGen(opts =>
         Scheme = "Bearer"
     });
 
-    opts.AddSecurityRequirement(new OpenApiSecurityRequirement)
+    opts.AddSecurityRequirement(new OpenApiSecurityRequirement()
     {
+        {
         new OpenApiSecurityScheme
         {
             Reference = new OpenApiReference
@@ -95,6 +96,7 @@ builder.Services.AddSwaggerGen(opts =>
         },
         new string[] {}
     }
+});
 });
 
 //configure JWT authentication
@@ -233,7 +235,7 @@ app.MapPost("/auth/register", async (RegisterRequest request, UserService userSe
 
     try
     {
-        var createUserDto = new CreateUserDto(request.Name, request.Email, request.Password);
+        var createUserDto = new CreateUserDto(request.Name, request.Email, request.Password, request.Roles ?? new List<string> { "User" });
         var user = await userService.CreateUserAsync(createUserDto);
 
         if(user == null)
@@ -243,7 +245,7 @@ app.MapPost("/auth/register", async (RegisterRequest request, UserService userSe
         }
 
         //generate new token
-        var token = tokenService.GenerateToken(user.Id.ToString(), user.Email, new[]{user.Role});
+        var token = tokenService.GenerateToken(user.Id.ToString(), user.Email, user.Roles);
         var expiresAt = DateTime.UtcNow.AddMinutes(60);
 
         logger.LogInformation("User registered successfully: {UserId}", user.Id);
@@ -252,7 +254,7 @@ app.MapPost("/auth/register", async (RegisterRequest request, UserService userSe
             token,
             user.Email,
             user.Name,
-            user.Role,
+            user.Roles,
             expiresAt
         ));
     }
@@ -290,7 +292,7 @@ app.MapPost("/auth/login", async (LoginRequest request, UserService userService,
         }
 
         //generate token
-        var token = tokenService.GenerateToken(user.Id.ToString(), user.Email, new[]{user.Role});
+        var token = tokenService.GenerateToken(user.Id.ToString(), user.Email, user.Roles);
         var expiresAt = DateTime.UtcNow.AddMinutes(60);
 
         logger.LogInformation("User logged in successfully: {UserId}", user.Id);
@@ -299,7 +301,7 @@ app.MapPost("/auth/login", async (LoginRequest request, UserService userService,
             token,
             user.Email,
             user.Name,
-            user.Role,
+            user.Roles,
             expiresAt
         ));
     }
@@ -329,7 +331,7 @@ app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) 
 
     try
     {
-        var user = await userService.GetUserByIdAsync(UserId);
+        var user = await userService.GetUserByIdAsync(userId);
         if (user ==null)
         {
             return Results.NotFound("User not found");
@@ -601,4 +603,5 @@ record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 }
 
 public partial class Program { }
+
 

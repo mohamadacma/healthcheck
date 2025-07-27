@@ -17,5 +17,7 @@ public class User
     public string PasswordHash {get; set; } = string.Empty;
     public List<string> Roles {get; set; } = new List<string>();
     public DateTime CreatedAt {get; set; } = DateTime.UtcNow;
-}
+    public bool IsActive {get; set; } = true;
+    public DateTime? LastLoginAt {get; set; } 
+ }
 }

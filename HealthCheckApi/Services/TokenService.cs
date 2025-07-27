@@ -20,7 +20,7 @@ namespace HealthCheckApi.Services
         {
             _configuration = Configuration;
             var JwtSettings = _configuration.GetSection("JwtSettings");
-            _secretkey = JwtSettings["key"] ?? throw new ArgumentNullException("JWT key not configured");
+            _secretKey = JwtSettings["SecretKey"] ?? throw new ArgumentNullException("JWT key not configured");
             _issuer = JwtSettings["Issuer"] ?? "HealthCheckApi";
             _audience = JwtSettings["Audience"] ?? "HealthCheckApiUsers";
             _expirationMinutes = int.Parse(JwtSettings["ExpiryMinutes"]?? "60");
@@ -31,16 +31,16 @@ namespace HealthCheckApi.Services
     /// </summary>
     /// <param name="userId">User's unique identifier</param>
     /// <param name="email">User's email</param>
-    /// <returns>JWT token string</return>
+    /// <returns>JWT token string</returns>
     public string GenerateToken(string userId, string email, IEnumerable<string> roles = null)
     {
         var tokenHandler= new JwtSecurityTokenHandler();
         var key = Encoding.ASCII.GetBytes(_secretKey);
 
-        var claims = new List<Claims>
+        var claims = new List<Claim>
         {
-            new Claim(CLaimTypes.NameIdentifier, userId),
-            new Claim(CLaimTypes.Email, email),
+            new Claim(ClaimTypes.NameIdentifier, userId),
+            new Claim(ClaimTypes.Email, email),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes. Integer64)
         };
@@ -57,7 +57,7 @@ namespace HealthCheckApi.Services
         {
             Subject = new ClaimsIdentity(claims),
             Expires = DateTime.UtcNow.AddMinutes(_expirationMinutes),
-            SingingCredentials= new SingingCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            SigningCredentials= new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
             Issuer= _issuer,
             Audience= _audience
         };
@@ -80,14 +80,14 @@ namespace HealthCheckApi.Services
 
             var validationParameters = new TokenValidationParameters
             {
-                validateIssuerSigningKey = true,
+                ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(key),
                 ValidateIssuer = true,
                 ValidIssuer = _issuer,
                 ValidateAudience = true,
                 ValidAudience = _audience,
                 ValidateLifetime = true,
-                CLockSkew = TimeSpan.Zero
+                ClockSkew = TimeSpan.Zero
             };
 
             var principal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
@@ -107,7 +107,7 @@ namespace HealthCheckApi.Services
     public string GetUserIdFromToken(string token)
     {
         var principal = ValidateToken(token);
-        return principal?.FindFirst(CLaimTypes.NameIdentifier)?.Value;
+        return principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ namespace HealthCheckApi.Services
     public IEnumerable<string> GetRolesFromToken(string token)
     {
         var principal = ValidateToken(token);
-        return principal?.FindAll(ClaimTypes.role)?.select(c => c.Value) ?? new List<string>();
+        return principal?.FindAll(ClaimTypes.Role)?.Select(c => c.Value) ?? new List<string>();
     }
 
     /// <summary>

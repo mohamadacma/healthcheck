@@ -4,5 +4,7 @@ public record UserResponseDto(
     string Email,
     List<string> Roles,
     DateTime? LastLoginAt,
+    DateTime CreatedAt,
     bool IsActive
+
 );

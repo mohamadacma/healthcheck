@@ -19,7 +19,13 @@ public static class ItemExtensions
         new ItemResponseDto { Id = item.Id, Name = item.Name, Quantity = item.Quantity };
 
     public static UserResponseDto ToResponseDto(this User user) =>
-        new UserResponseDto { Id = user.Id, Name = user.Name, Email = user.Email, Roles = user.Roles, CreatedAt = user.CreatedAt};
-
- 
+        new UserResponseDto(
+            user.Id,
+            user.Name,
+            user.Email,
+            user.Roles,
+            user.LastLoginAt,
+            user.CreatedAt,
+            user.IsActive
+        );
 }
