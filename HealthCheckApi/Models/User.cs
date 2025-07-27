@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 
 namespace HealthCheckApi.Models
+{
 
 public class User 
 {
-    public int Id {get; set }
+    public int Id {get; set; }
     [Required(ErrorMessage="Name is required")]
     [StringLength(100,ErrorMessage = "Name cannot exceed 100 characters")]
     public string Name {get; set; } = string.Empty;
@@ -16,4 +17,5 @@ public class User
     public string PasswordHash {get; set; } = string.Empty;
     public List<string> Roles {get; set; } = new List<string>();
     public DateTime CreatedAt {get; set; } = DateTime.UtcNow;
+}
 }

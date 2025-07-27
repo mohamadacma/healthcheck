@@ -1,5 +1,6 @@
 
 namespace HealthCheckApi.DTOs
+{
 
 public record CreateUserDto(
     string Name,
@@ -7,3 +8,4 @@ public record CreateUserDto(
     string Password,
     List<string> Roles
 );
+}

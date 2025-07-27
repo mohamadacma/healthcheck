@@ -1,4 +1,5 @@
 namespace HealthCheckApi.DTOs
+{
 
 public record LoginRequest(
     string Email,
@@ -19,3 +20,4 @@ public record LoginResponse(
     string Role,
     DateTime? ExpiresAt
 );
+}

@@ -290,7 +290,7 @@ app.MapPost("/auth/login", async (LoginRequest request, UserService userService,
         }
 
         //generate token
-        var token = tokenService.GenerateToken(user.Id.Tostring(), user.Email, new[]{user.Role});
+        var token = tokenService.GenerateToken(user.Id.ToString(), user.Email, new[]{user.Role});
         var expiresAt = DateTime.UtcNow.AddMinutes(60);
 
         logger.LogInformation("User logged in successfully: {UserId}", user.Id);
@@ -314,7 +314,7 @@ app.MapPost("/auth/login", async (LoginRequest request, UserService userService,
 .WithDescription("AUthenticates user and return jwt")
 .Produces<LoginResponse>(StatusCodes.Status200OK)
 .Produces(StatusCodes.Status400BadRequest)
-.Produces(StatusCodes.status401Unauthorized)
+.Produces(StatusCodes.Status401Unauthorized)
 .WithOpenApi();
 
 //Get current user info
@@ -322,7 +322,7 @@ app.MapGet("/auth/me", async (HttpContext httpContext, UserService userService) 
 {
     var userIdClaim = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-    if(string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int UserId))
+    if(string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
     {
         return Results.Unauthorized();
     }
