@@ -93,4 +93,28 @@ public class AuthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal("Test User", loginResponse.Name);
         Assert.Contains("User", loginResponse.Roles);
     }
+
+    public async Task Register_WithDuplicateEmail_ReturnsConflict()
+    {
+        //Arrange
+        var registerRequest = new RegisterRequest
+        {
+            Name = "Test User",
+            Email = "duplicate@example.com",
+            Password = "TestPassword321",
+            Roles = new List<string> {"User"}
+        };
+
+        var json = JsonSerializer.Serialize(registerRequest, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        await _client.PostAsync("/auth/register", content);
+
+        //Act
+        var duplicateContent = new StringContent(json, Encoding.UTF8, "application/json");
+        var response = await _client.PostAsync("/auth/register", duplicateContent);
+        //Assert
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+    
 }
