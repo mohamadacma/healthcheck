@@ -144,7 +144,12 @@ public class AuthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Login_WithValidCredentials_ReturnsTokenAndUserInfo()
     {
         //Arrange
-        await RegisterTestUser("login@example.com", "LoginPassword123", "Login User");
+       var registerRequest = new RegisterRequest("Login User", "login@example.com", "Password123!", new List<string> { "User" });
+       var json = JsonSerializer.Serialize(registerRequest, _jsonOptions);
+       var content = new StringContent(json, Encoding.UTF8, "application/json");
+       var response = await _client.PostAsync("/auth/register", content);
+       Assert.Equal(HttpStatusCode.Created, response.HttpStatusCode);
+
 
         var loginRequest = new loginRequest
         {
@@ -168,5 +173,48 @@ public class AuthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         Assert.Equal("login@example.com", loginResponse.Email);
         Assert.Equal("Login User", loginResponse.Name);
     }
+    
+    [Fact]
+    public async Task Login_WithInvalidCredentials_ReturnsUnauthorized()
+    {
+        //Arrange
+        var loginRequest = new LoginRequest
+        {
+            Email = "nonexistent@example.com",
+            Password = "WrongPassword"
+        };
+
+        var json = JsonSerializer.Serialize(loginRequest, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        //Act
+        var repsonse = await _client.PostAsync("/auth/login", content);
+        //Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode)
+    }
+
+    [Theory]
+    [InlineData("","Password")]
+    [InlineData("test@example.com", "")]
+    public async Task Login_WithMissingFields_ReturnsBadRequest(string email, string password)
+    {
+        //Arrange
+        var loginRequest = new LoginRequest
+        {
+            Email = email,
+            Password = password
+        };
+
+        var json = JsonSerializer.Serialize(loginRequest, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        //Act 
+        var repsonse = await _client.PostAsync("/auth/login", content);
+        //Assert 
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    #endregion;
+
+    #region Authorization Tests
 
 }
