@@ -13,13 +13,18 @@ using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 
 
+DotNetEnv.Env.Load();
+
 var builder = WebApplication.CreateBuilder(args);
 
 
 
 //Bind Kestrel to Railway
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+var port = Environment.GetEnvironmentVariable("PORT");
+if(!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
 
 //configure connection string; DatabaseURL-->Npgsql 
 
@@ -102,6 +107,7 @@ builder.Services.AddSwaggerGen(opts =>
 //configure JWT authentication
 var jwt = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwt["SecretKey"]!);
+Console.WriteLine($"[DEBUG] JWT Key = {jwt["SecretKey"] ?? "NULL"}");
 
 builder.Services.AddAuthentication("Bearer")
     .AddJwtBearer("Bearer", options =>
@@ -159,7 +165,7 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-
+app.MapGet("/ping", () => "pong");
 var summaries = new[]
 {
     "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
