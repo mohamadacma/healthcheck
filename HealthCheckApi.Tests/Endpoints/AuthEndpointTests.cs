@@ -116,5 +116,57 @@ public class AuthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
         //Assert
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
-    
+
+    [Theory]
+    [InlineData("","test@example.com", "password")]
+    [InlineData("Test User","", "password")]
+    [InlineData("Test User","test@example.com", "")]
+    public async Task Register_WithMissingFields_ReturnsBadRequest(string name, string email, string password)
+    {
+        //Arrange
+        var registerRequest = new RegisterRequest
+        {
+            Name = name,
+            Email = email,
+            Password = password
+        };
+
+        var json = JsonSerializer.Serialize(registerRequest, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        //Act
+        var response = await _client.PostAsync("/auth/register", content);
+        //Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Login_WithValidCredentials_ReturnsTokenAndUserInfo()
+    {
+        //Arrange
+        await RegisterTestUser("login@example.com", "LoginPassword123", "Login User");
+
+        var loginRequest = new loginRequest
+        {
+            Email = "login@example.com",
+            Password = "LoginPassword123"
+        };
+
+        var json = JsonSerializer.Serialize(loginRequest, _jsonOptions);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        //Act
+        var response = await _client.PostAsync("/auth/login", content);
+        //Assert
+        Assert.Equal(HttpStatusCode.Ok, response.StatusCode);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var loginResponse = JsonSerializer.Deserialize<loginResponse>(responseContent, _jsonOptions);
+
+        Assert.NotNull(loginResponse);
+        Assert.NotNull(loginResponse.Token);
+        Assert.Equal("login@example.com", loginResponse.Email);
+        Assert.Equal("Login User", loginResponse.Name);
+    }
+
 }
