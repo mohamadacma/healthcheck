@@ -144,12 +144,7 @@ public class AuthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Login_WithValidCredentials_ReturnsTokenAndUserInfo()
     {
         //Arrange
-       var registerRequest = new RegisterRequest("Login User", "login@example.com", "Password123!", new List<string> { "User" });
-       var json = JsonSerializer.Serialize(registerRequest, _jsonOptions);
-       var content = new StringContent(json, Encoding.UTF8, "application/json");
-       var response = await _client.PostAsync("/auth/register", content);
-       Assert.Equal(HttpStatusCode.Created, response.HttpStatusCode);
-
+        await RegisterTestUser("login@example.com", "LoginPassword123","Login User");
 
         var loginRequest = new loginRequest
         {
@@ -216,5 +211,94 @@ public class AuthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
     #endregion;
 
     #region Authorization Tests
+
+    [Fact]
+    public async Task GetCurrentUser_WithValidToken_ReturnsUserInfo()
+    {
+        //Arrange
+        var token = await GetValidToken("userinfo@example.com", "Password123", "User Info", new[] {"User"});
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        //Act
+        var repsonse = await _client.GetAsync("/auth/me");
+        //Assert
+        Assert.Equal(HttpStatusCode.Ok, response.StatusCode);
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var userResponse = JsonSerializer.Deserialize<UserResponseDto>(responseContent, _jsonOptions);
+
+        Assert.NotNull(userResponse);
+        Assert.Equal("userinfo@example.com", userResponse.Email);
+        Assert.Equal("User Info", userResponse.Name);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_WithoutToken_ReturnsUnauthorized()
+    {
+        //Act
+        var response = await _client.GetAsync("/auth/me");
+        //Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, repsonse.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCurrentUser_WithInvalidToken_ReturnsUnauthorized()
+    {
+        //Arrange
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", "invalid-token");
+        //Act
+        var reposnse = await _client.GetAsync("/auth/me");
+        //Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, reposnse.StatusCode);
+    }
+
+    #endregion
+
+
+
+    #region Helper Methods
+    private async Task<string> RegisterTestUser(string email, string password, string name, string[] roles = null)
+    {
+        var registerRequest = new RegisterRequest
+        {
+            Name = name,
+            Email = email,
+            Password = password,
+            Roles = roles?.ToList() ?? new List<string> {"User" }
+        };
+
+        var json = JsonSerializer.Serialize(registerRequest, _jsonOptions);
+        var content = new StringContent(json,Encoding UTF8, "application/json");
+
+        var response = await _client.PostAsync("/auth/regsiter", content);
+        response.EnsureSuccessStatusCode();
+
+        var repsonseContent = response.Content.ReadAsStringAsync();
+        var loginResponse = JsonSerializer.Deserialize<loginResponse>(responseContent, _jsonOptions);
+
+        return loginResponse.Token;
+    }
+
+private async GetValidToken(string email, string password, string name, string[] roles)
+{
+    //register user
+    await RegisterTestUser(email,password,name,Roles);
+    //get a fresh token
+    var loginRequest = new LoginRequest
+    {
+        Email = email,
+        Password = password
+    };
+
+    var json = JsonSerializer.Serialize(loginRequest, _jsonOptions);
+    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+    var response = await _client.PostAsync("/auth/login", content);
+    response.EnsureSuccessStatusCode();
+
+    var responseContent = await response.Content.ReadAsStringAsync();
+    var loginResponse = JsonSerializer.Deserialize<loginResponse>(responseContent, _jsonOptions);
+
+    return loginResponse.Token;
+}
 
 }
