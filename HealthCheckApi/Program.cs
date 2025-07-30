@@ -104,6 +104,7 @@ builder.Services.AddSwaggerGen(opts =>
 });
 });
 
+
 //configure JWT authentication
 var jwt = builder.Configuration.GetSection("JwtSettings");
 var key = Encoding.UTF8.GetBytes(jwt["SecretKey"]!);
@@ -137,15 +138,16 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", p => p
-        .WithOrigins(
-            builder.Configuration["FrontendUrl"] ?? "http://localhost:5173",
-            "http://localhost: 3000")
-            .AllowAnyHeader()
-            .AllowAnyMethod());
+        .WithOrigins("http://localhost:3000")
+        .AllowAnyHeader()
+        .AllowAnyMethod()
+        );
 });
 
+
+
 var app = builder.Build();
-app.UseCors("Frontend");
+
 
 
 using var scope = app.Services.CreateScope();
@@ -172,7 +174,7 @@ var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
-
+app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -607,7 +609,8 @@ app.MapDelete("/items/{id}", async(ItemsDbContext context, int id)=>
 
 
 //endpoints to monitor app and db health
-app.MapHealthChecks("/health");
+app.MapGet("/health", () => Results.Json(new { status = "ok" }))
+   .RequireCors("Frontend");
 app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health/live");
 

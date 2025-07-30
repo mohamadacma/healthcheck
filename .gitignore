@@ -10,3 +10,7 @@ obj/
 
 
 .env
+
+# Frontend dependencies
+frontend/node_modules/
+frontend/build/
