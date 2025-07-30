@@ -134,7 +134,18 @@ builder.Services.AddAuthorization(options =>
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<UserService>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", p => p
+        .WithOrigins(
+            builder.Configuration["FrontendUrl"] ?? "http://localhost:5173",
+            "http://localhost: 3000")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
+
 var app = builder.Build();
+app.UseCors("Frontend");
 
 
 using var scope = app.Services.CreateScope();
