@@ -1,6 +1,7 @@
 import './App.css';
 import React, { useEffect, useState } from 'react';
 import ItemLookup from './components/ItemLookup';
+import ItemList from './components/ItemList';
 
 function App() {
   const [apiData, setApiData] = useState(null);
@@ -30,6 +31,7 @@ function App() {
     <div className="App">
       <h1>Hospital Inventory Dashboard</h1>
       <ItemLookup />
+      <ItemList />
       <p>API Response: { apiData ? apiData.status : 'Loading...'}</p>
       </div>
   );
