@@ -2,9 +2,11 @@ import './App.css';
 import React, { useEffect, useState } from 'react';
 import ItemLookup from './components/ItemLookup';
 import ItemList from './components/ItemList';
+import ItemForm from './components/ItemForm';
 
 function App() {
   const [apiData, setApiData] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     fetch('http://localhost:5200/health', {
@@ -30,6 +32,9 @@ function App() {
   return (
     <div className="App">
       <h1>Hospital Inventory Dashboard</h1>
+      <ItemForm onCreated={() => setRefreshKey(k => k +1)} />
+      {/* ItemList should refetch when refreshKey changes */}
+      <ItemList refreshKey = {refreshKey} />
       <ItemLookup />
       <ItemList />
       <p>API Response: { apiData ? apiData.status : 'Loading...'}</p>

@@ -1,4 +1,5 @@
 import {get} from './client';
+import {post} from './client';
 
 export const getItem = (id) => get(`/items/${id}`)
 export function listItems(params = {}) {
@@ -9,3 +10,4 @@ export function listItems(params = {}) {
 
     return get(`/items${qs ? `?${qs}` : ''}`);
 }
+export const createItem = (payLoad) => post('/items', payLoad);
