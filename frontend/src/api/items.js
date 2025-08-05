@@ -11,3 +11,21 @@ export function listItems(params = {}) {
     return get(`/items${qs ? `?${qs}` : ''}`);
 }
 export const createItem = (payLoad) => post('/items', payLoad);
+export async function updateItem(id, updatedItem) {
+    const token = localStorage.getToken('token');
+    const res = await fetch(`http://localhost:5200/items/${id}`, {
+        method : 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedItem),
+    });
+
+    if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to update item');
+    }
+
+    return res.json();
+}

@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import ItemLookup from './components/ItemLookup';
 import ItemList from './components/ItemList';
 import ItemForm from './components/ItemForm';
+import ItemEditForm from './components/ItemEditForm';
+
 
 function App() {
   const [apiData, setApiData] = useState(null);
@@ -36,7 +38,10 @@ function App() {
       {/* ItemList should refetch when refreshKey changes */}
       <ItemList refreshKey = {refreshKey} />
       <ItemLookup />
-      <ItemList />
+      <ItemEditForm
+  item={{ id: 5, name: 'Pads', quantity: 15 }}
+  onUpdated={() => setRefreshKey(k => k + 1)}
+/>
       <p>API Response: { apiData ? apiData.status : 'Loading...'}</p>
       </div>
   );
