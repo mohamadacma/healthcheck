@@ -1,5 +1,6 @@
-import {get} from './client';
-import {post} from './client';
+import {get,post ,put, del } from './client';
+
+
 
 export const getItem = (id) => get(`/items/${id}`)
 export function listItems(params = {}) {
@@ -28,4 +29,8 @@ export async function updateItem(id, updatedItem) {
     }
 
     return res.json();
+}
+export async function deleteItem(id) { 
+    del(`/items/${id}`);
+
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { listItems } from '../api/items';
+import { deleteItem } from '../api/items';
 
 function useDebounced(value, delay = 400) {
     const [v, setV] = useState(value);
@@ -49,6 +50,25 @@ export default function ItemList() {
     const canPrev = page > 1;
     const canNext = page < totalPages;
 
+    //DELETE
+    async function handleDelete(id) {
+        const ok = window.confirm('Delete this item? This cannot be undone. ')
+        if(!ok) return;
+
+        const prev = items;
+        setItems(prev => prev.filter(i =>i.id !==id));
+        setTotal(t =>  Math.max(0, t-1));
+
+        try {
+            await deleteItem(id);
+           
+        } catch (err) {
+            setItems(prev);
+            setTotal(prev => prev +1);
+            alert (err.message || 'Failed to delete item');
+        }
+    }
+
     return (
         <section style ={{ marginTop: 24}}>
             <h2>Inventory</h2>
@@ -81,6 +101,7 @@ export default function ItemList() {
                             <th style={{ textAlign: 'left', borderBottom: '1px solid #ddd', padding: 6}}>ID</th>
                             <th style={{ textAlign:'left', borderBottom: '1px solid #ddd', padding: 6}}> Name</th>
                             <th style={{ textAlign:'left', borderBottom: '1px solid #ddd', padding: 6}}>Quantity</th>
+                            <th style={{ textAlign:'left', borderBottom: '1px solid #ddd', padding: 6 }}>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -89,6 +110,9 @@ export default function ItemList() {
                                 <td style={{ borderBottom: '1px solid #f0f0f0', padding: 6}}>{i.id}</td>
                                 <td style={{ borderBottom: '1px solid #f0f0f0', padding: 6}}>{i.name}</td>
                                 <td style={{ borderBottom: '1px solid #f0f0f0', padding: 6}}>{i.quantity}</td>
+                                <td style={{ borderBottom: '1px solid #f0f0f0', padding: 6 }}>
+                                    <button onClick={() => handleDelete(i.id)}>Delete</button>
+                                </td>
                             </tr>
                         ))}
                     </tbody>
@@ -100,6 +124,7 @@ export default function ItemList() {
                 <button onClick={() => setPage(p =>Math.min(totalPages, p+1))} disabled={!canNext}>Next</button>
             </div>
         </section>
+
     );
 
 }
