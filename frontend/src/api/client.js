@@ -34,6 +34,7 @@ export async function request(path, {method = 'GET', body, headers={}, auth= tru
     const data = text ? safeParse(text) : null;
 
     if(!res.ok) {
+        if (res.status === 401) { clearToken(); }
         const msg = (data && (data.title || data.detail)) || text || res.statusText;
         const err = new Error(`${res.status} ${msg}`);
         err.status = res.status;

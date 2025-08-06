@@ -11,7 +11,7 @@ function useDebounced(value, delay = 400) {
     return v;
 }
 
-export default function ItemList() {
+export default function ItemList({ refreshKey = 0 }) {
     const [items, setItems] = useState([]);
     const [total, setTotal] = useState(0);
     const [page, setPage] = useState(1);
@@ -32,7 +32,7 @@ export default function ItemList() {
             setLoading(true);
             setError('');
             try {
-                const data = await listItems({ search: DebouncedSearch, page, pageSize });
+                const data = await listItems({ search: DebouncedSearch, page, pageSize, refreshKey });
                 if (!cancelled) {
                     setItems(data.items || []);
                     setTotal(data.total ?? 0);

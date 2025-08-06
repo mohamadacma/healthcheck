@@ -1,12 +1,18 @@
 import './App.css';
-import React, { useEffect, useState } from 'react';
-import ItemLookup from './components/ItemLookup';
-import ItemList from './components/ItemList';
-import ItemForm from './components/ItemForm';
-import ItemEditForm from './components/ItemEditForm';
 
+import ItemEditForm from './components/ItemEditForm';
+import ItemForm from './components/ItemForm';
+import ItemList from './components/ItemList';
+import Inventory from './pages/Inventory';
+import ItemLookup from './components/ItemLookup';
+import Login from './pages/Login';
+import { getToken } from './api/client';
+
+
+import React, { useState, useEffect } from "react";
 
 function App() {
+  const [authorized, setAuthorized] = useState(!!getToken());
   const [apiData, setApiData] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -19,7 +25,7 @@ function App() {
     })
       .then(response => {
         console.log('Response status', response.status);
-        if(!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         return response.json();
       })
       .then(data => {
@@ -29,22 +35,22 @@ function App() {
       .catch(error => {
         console.error('Fetch error:', error);
       });
-    }, []);
-
-  return (
+  }, []);
+ 
+  return authorized ? (
     <div className="App">
       <h1>Hospital Inventory Dashboard</h1>
-      <ItemForm onCreated={() => setRefreshKey(k => k +1)} />
-      {/* ItemList should refetch when refreshKey changes */}
-      <ItemList refreshKey = {refreshKey} />
+      <ItemForm onCreated={() => setRefreshKey(k => k + 1)} />
+      <ItemList refreshKey={refreshKey} />
       <ItemLookup />
       <ItemEditForm
-  item={{ id: 5, name: 'Pads', quantity: 15 }}
-  onUpdated={() => setRefreshKey(k => k + 1)}
-/>
-      <p>API Response: { apiData ? apiData.status : 'Loading...'}</p>
-      </div>
+        item={{ id: 5, name: 'Pads', quantity: 15 }}
+        onUpdated={() => setRefreshKey(k => k + 1)}
+      />
+      <p>API Response: {apiData ? apiData.status : 'Loading...'}</p>
+    </div>
+  ) : (
+    <Login onSuccess={() => setAuthorized(true)} />
   );
-  }
-
+}
 export default App;
