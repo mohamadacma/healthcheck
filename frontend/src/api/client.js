@@ -1,4 +1,4 @@
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5200';
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5200'.replace(/\/+$/, '');
 
 export const getToken = () => localStorage.getItem('token');
 export const setToken = (t) => localStorage.setItem('token', t);
@@ -37,7 +37,7 @@ export async function request(path, {method = 'GET', body, headers={}, auth= tru
     const contentType = res.headers.get('content-type') || '';
     const isJson = contentType.includes('application/json');
     const text = await res.text();
-    const data = text ? safeParse(text) : null;
+    const data = isJson && text ? safeParse(text) : null;
 
     if(!res.ok) {
         if (res.status === 401) { 
