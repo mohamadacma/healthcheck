@@ -10,14 +10,16 @@ export default function ItemLookup() {
 
     const onFetch = async (e) => {
         e.preventDefault();
-        setLoading(true); setError(''); setItem(null);
-        setSuccess(`Item ID ${id} loaded successfully ✅`);
+        setLoading(true);
+        setError(''); 
+        setItem(null);
+        setSuccess('');
         try {
             const data = await getItem(id);
             setItem(data);
+            setSuccess(`Item ID ${id} loaded successfully ✅`);
         } catch (err) {
             setError(err.message);
-            setSuccess(''); 
         } finally {
             setLoading(false);
         }
