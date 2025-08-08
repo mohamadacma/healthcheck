@@ -7,9 +7,8 @@ import { getToken } from './api/client';
 
 function App() {
   const [authorized, setAuthorized] = useState(!!getToken());
-  const [apiData, setApiData] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
+  
   useEffect(() => {
     const onUnauthorized = () => setAuthorized(false);
     window.addEventListener('app:unauthorized', onUnauthorized);

@@ -17,7 +17,12 @@ const safeParse = (text) => {
 
 export async function request(path, {method = 'GET', body, headers={}, auth= true})
 {
-    const h = {'Content-Type': 'application/json', ...headers };
+    const h = {
+        'Content-Type': 'application/json',
+         'Accept': 'application/json',
+         ...headers,
+         };
+
     if(auth)
     {
         const t = getToken();
@@ -29,13 +34,20 @@ export async function request(path, {method = 'GET', body, headers={}, auth= tru
         headers : h,
         body : body ? JSON.stringify(body) : undefined,
     });
-
+    const contentType = res.headers.get('content-type') || '';
+    const isJson = contentType.includes('application/json');
     const text = await res.text();
     const data = text ? safeParse(text) : null;
 
     if(!res.ok) {
-        if (res.status === 401) { clearToken(); }
-        const msg = (data && (data.title || data.detail)) || text || res.statusText;
+        if (res.status === 401) { 
+            clearToken();
+            window.dispatchEvent(new Event('app:unauthorized'));
+         }
+
+        const msg = 
+            (data && (data.title || data.detail || data.message || data.error))|| 
+            text || res.statusText;
         const err = new Error(`${res.status} ${msg}`);
         err.status = res.status;
         err.body = data || text;
