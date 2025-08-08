@@ -14,7 +14,4 @@ export function listItems(params = {}) {
 }
 export const createItem = (payLoad) => post('/items', payLoad);
 export const updateItem = (id, payload) => put(`/items/${id}`, payload);
-export async function deleteItem(id) { 
-    del(`/items/${id}`);
-
-}
+export const deleteItem = (id) =>  del(`/items/${id}`);
