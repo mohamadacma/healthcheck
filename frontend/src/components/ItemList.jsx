@@ -32,7 +32,7 @@ export default function ItemList({ refreshKey = 0 }) {
             setLoading(true);
             setError('');
             try {
-                const data = await listItems({ search: DebouncedSearch, page, pageSize, refreshKey });
+                const data = await listItems({ search: DebouncedSearch, page, pageSize });
                 if (!cancelled) {
                     setItems(data.items || []);
                     setTotal(data.total ?? 0);
@@ -45,7 +45,7 @@ export default function ItemList({ refreshKey = 0 }) {
         }
         run();
         return () => { cancelled = true; };
-    }, [DebouncedSearch, page, pageSize]);
+    }, [DebouncedSearch, page, pageSize, refreshKey]);
 
     const canPrev = page > 1;
     const canNext = page < totalPages;
