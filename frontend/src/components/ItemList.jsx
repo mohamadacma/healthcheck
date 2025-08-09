@@ -25,6 +25,11 @@ export default function ItemList({ refreshKey = 0 }) {
         () => Math.max(1, Math.ceil(total / pageSize)),
         [total, pageSize]
     );
+    const hasItems = items.length > 0;
+    const isSearching = !!DebouncedSearch?.trim();
+    const showEmpty = !loading && !error && !hasItems;
+    const canPrev = page > 1;
+    const canNext = page < totalPages;
 
     useEffect(() => {
         let cancelled = false; 
@@ -46,9 +51,6 @@ export default function ItemList({ refreshKey = 0 }) {
         run();
         return () => { cancelled = true; };
     }, [DebouncedSearch, page, pageSize, refreshKey]);
-
-    const canPrev = page > 1;
-    const canNext = page < totalPages;
 
     //DELETE
     async function handleDelete(id) {
@@ -79,9 +81,22 @@ export default function ItemList({ refreshKey = 0 }) {
                 value={search}
                 onChange={e => { setSearch(e.target.value); setPage(1); }}
                 />
+                <button 
+                    type = "button"
+                    onClick={() => { setSearch(''); setPage(1); }}
+                    disabled={!search}
+                    title="Clear search"
+                    style={{ padding: '6px 10px' }}
+                    >
+                        Clear
+                    </button>
                 <label>
                     Page size: {' '}
-                    <select value= {pageSize} onChange={e => {setPageSize(Number(e.target.value)); setPage(1); }}>
+                    <select 
+                        value= {pageSize} 
+                        onChange={e => {setPageSize(Number(e.target.value)); setPage(1); }}
+                        disabled={total === 0}
+                        >
                         {[5,10,20,50]. map(n => <option key={n} value={n}>{n}</option>)}
                     </select>
                 </label>
@@ -92,9 +107,13 @@ export default function ItemList({ refreshKey = 0 }) {
 
             {loading && <p>Loading...</p>}
             {error && <p style={{ color: 'crimson' }}>Error: {error}</p>}
-            {!loading && !error && items.length === 0 && <p>No items found.</p>}
+            {showEmpty && (
+                isSearching 
+                    ? <p>No results for "{DebouncedSearch}". <button onClick={() => { setSearch(''); setPage(1); }}>Clear search</button></p>
+                    : <p>No items yet. Use <strong>Add Item</strong> above to create your first one.</p> 
+            )}
 
-            {!loading && !error && items.length > 0 && (
+            {!loading && !error && hasItems && (
                 <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
                         <tr>
