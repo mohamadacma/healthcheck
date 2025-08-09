@@ -45,12 +45,18 @@ export default function ItemForm({ onCreated }) {
                 placeholder="Item name"
                 value = {name}
                 onChange = {(e) => setName(e.target.value)}
+                required
+                autoFocus
             />
             <input 
                 placeholder="Quantity"
                 value = {quantity}
                 onChange={(e) => setQuantity(e.target.value)}
+                type = "number"
+                min = "0"
+                step = "1"
                 inputMode="numeric"
+                required
             />
             <button type="submit" disabled={loading}>{loading ? 'Saving...': 'Add Item'}</button>
 
