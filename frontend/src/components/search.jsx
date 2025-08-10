@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { getItem } from '../api/items';
 import { listItems } from '../api/items';
 import { deleteItem } from '../api/items';
-import { Search, Filter, Package, AlertTriangle, Calendar, MapPin, Edit, Trash2 } from 'lucide-react';
 
 // API functions 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5200';
@@ -58,11 +57,6 @@ async function request(path, { method = 'GET', body, headers = {}, auth = true }
 
 const get = (path, options) => request(path, { ...options, method: 'GET' });
 const del = (path, options) => request(path, { ...options, method: 'DELETE' });
-
-
-
-
-
 
 // Custom hook for debounced values
 function useDebounced(value, delay = 400) {
@@ -235,171 +229,268 @@ const HospitalInventorySearch = () => {
   const showEmpty = !loading && !error && !hasResults;
 
   return (
-    <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <Package className="text-blue-600" size={32} />
-          <h1 className="text-3xl font-bold text-gray-900">Hospital Inventory Search</h1>
+    <div style={{ 
+      backgroundColor: '#f8f9fa', 
+      padding: '24px', 
+      borderRadius: '8px', 
+      border: '1px solid #e9ecef',
+      marginBottom: '24px'
+    }}>
+      <h3 style={{ margin: '0 0 16px 0', color: '#1a5490' }}>
+        🔍 Hospital Inventory Search
+      </h3>
+
+      {/* Main Search Bar */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <div style={{ flex: 1 }}>
+          <input
+            type="text"
+            placeholder="Search by item name or enter ID for specific item..."
+            style={{
+              width: '100%',
+              padding: '8px 12px',
+              border: '1px solid #ced4da',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && /^\d+$/.test(searchTerm.trim())) {
+                handleQuickSearchById(searchTerm);
+              }
+            }}
+          />
         </div>
-        
-        {/* Main Search Bar */}
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search by item name or enter ID for specific item..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && /^\d+$/.test(searchTerm.trim())) {
-                  handleQuickSearchById(searchTerm);
-                }
-              }}
-            />
-          </div>
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="flex items-center gap-2 px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            <Filter size={20} />
-            Advanced
-          </button>
-          <button
-            onClick={clearFilters}
-            className="px-4 py-3 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
-            disabled={!isSearching}
-          >
-            Clear All
-          </button>
-        </div>
-
-        {/* Quick Action Buttons */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          <button
-            onClick={() => handleQuickSearch('lowStock')}
-            className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-full hover:bg-red-200 transition-colors"
-          >
-            <AlertTriangle size={16} />
-            Low Stock Items
-          </button>
-          <button
-            onClick={() => handleQuickSearch('expiring')}
-            className="flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-full hover:bg-yellow-200 transition-colors"
-          >
-            <Calendar size={16} />
-            Expiring Soon
-          </button>
-          <button
-            onClick={() => handleQuickSearch('medications')}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full hover:bg-blue-200 transition-colors"
-          >
-            <Package size={16} />
-            Medications
-          </button>
-        </div>
-
-        {/* Advanced Filters */}
-        {showAdvanced && (
-          <div className="border-t pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <select
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  value={filters.category}
-                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
-                >
-                  {categories.map(cat => (
-                    <option key={cat} value={cat === "All Categories" ? "" : cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                <select
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  value={filters.location}
-                  onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
-                >
-                  {locations.map(loc => (
-                    <option key={loc} value={loc === "All Locations" ? "" : loc}>
-                      {loc}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Min Quantity</label>
-                <input
-                  type="number"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  value={filters.minQuantity}
-                  onChange={(e) => setFilters(prev => ({ ...prev, minQuantity: e.target.value }))}
-                  placeholder="0"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Max Quantity</label>
-                <input
-                  type="number"
-                  className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  value={filters.maxQuantity}
-                  onChange={(e) => setFilters(prev => ({ ...prev, maxQuantity: e.target.value }))}
-                  placeholder="∞"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-4 mt-4">
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={filters.lowStock}
-                  onChange={(e) => setFilters(prev => ({ ...prev, lowStock: e.target.checked }))}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Show only low stock items</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={filters.expiringSoon}
-                  onChange={(e) => setFilters(prev => ({ ...prev, expiringSoon: e.target.checked }))}
-                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm text-gray-700">Show only items expiring soon</span>
-              </label>
-            </div>
-          </div>
-        )}
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          style={{
+            background: 'none',
+            border: '1px solid #6c757d',
+            color: '#6c757d',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          {showAdvanced ? '▼ Hide Advanced Options' : '▶ Show Advanced Options'}
+        </button>
+        <button
+          onClick={clearFilters}
+          style={{
+            backgroundColor: '#dc3545',
+            color: 'white',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            opacity: !isSearching ? 0.5 : 1,
+            pointerEvents: !isSearching ? 'none' : 'auto'
+          }}
+        >
+          Clear All
+        </button>
       </div>
+
+      {/* Quick Action Buttons */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+        <button
+          onClick={() => handleQuickSearch('lowStock')}
+          style={{
+            backgroundColor: '#f8d7da',
+            color: '#dc3545',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          ⚠️ Low Stock Items
+        </button>
+        <button
+          onClick={() => handleQuickSearch('expiring')}
+          style={{
+            backgroundColor: '#fff3cd',
+            color: '#ffc107',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          📅 Expiring Soon
+        </button>
+        <button
+          onClick={() => handleQuickSearch('medications')}
+          style={{
+            backgroundColor: '#d1ecf1',
+            color: '#0c5460',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          💊 Medications
+        </button>
+      </div>
+
+      {/* Advanced Filters */}
+      {showAdvanced && (
+        <div style={{ 
+          padding: '16px', 
+          backgroundColor: '#ffffff', 
+          borderRadius: '4px', 
+          border: '1px solid #dee2e6',
+          marginBottom: '20px'
+        }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+            gap: '16px' 
+          }}>
+            <div>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: '#333' }}>
+                Category
+              </label>
+              <select
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+                value={filters.category}
+                onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
+              >
+                {categories.map(cat => (
+                  <option key={cat} value={cat === "All Categories" ? "" : cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: '#333' }}>
+                Location
+              </label>
+              <select
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+                value={filters.location}
+                onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value }))}
+              >
+                {locations.map(loc => (
+                  <option key={loc} value={loc === "All Locations" ? "" : loc}>
+                    {loc}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: '#333' }}>
+                Min Quantity
+              </label>
+              <input
+                type="number"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+                value={filters.minQuantity}
+                onChange={(e) => setFilters(prev => ({ ...prev, minQuantity: e.target.value }))}
+                placeholder="0"
+              />
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold', color: '#333' }}>
+                Max Quantity
+              </label>
+              <input
+                type="number"
+                style={{
+                  width: '100%',
+                  padding: '8px 12px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
+                value={filters.maxQuantity}
+                onChange={(e) => setFilters(prev => ({ ...prev, maxQuantity: e.target.value }))}
+                placeholder="∞"
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#333' }}>
+              <input
+                type="checkbox"
+                checked={filters.lowStock}
+                onChange={(e) => setFilters(prev => ({ ...prev, lowStock: e.target.checked }))}
+                style={{ width: '16px', height: '16px' }}
+              />
+              Show only low stock items
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#333' }}>
+              <input
+                type="checkbox"
+                checked={filters.expiringSoon}
+                onChange={(e) => setFilters(prev => ({ ...prev, expiringSoon: e.target.checked }))}
+                style={{ width: '16px', height: '16px' }}
+              />
+              Show only items expiring soon
+            </label>
+          </div>
+        </div>
+      )}
 
       {/* Results */}
       {loading ? (
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-3 text-gray-600">Loading inventory...</span>
+        <div style={{ textAlign: 'center', padding: '32px 0', color: '#6c757d' }}>
+          ⏳ Loading inventory...
         </div>
       ) : error ? (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <AlertTriangle className="text-red-500 mx-auto mb-2" size={24} />
-          <p className="text-red-700 font-medium">Error: {error}</p>
+        <div style={{ 
+          color: '#dc3545', 
+          fontWeight: 'bold',
+          backgroundColor: '#f8d7da',
+          padding: '16px',
+          borderRadius: '4px',
+          border: '1px solid #f5c6cb',
+          textAlign: 'center'
+        }}>
+          ❌ {error}
         </div>
       ) : hasResults ? (
-        <div className="bg-white rounded-lg shadow-sm">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div>
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            marginBottom: '16px' 
+          }}>
+            <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#333' }}>
               Search Results ({total} total items)
-            </h3>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
+            </h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#6c757d', fontSize: '14px' }}>
               <span>Page {page} of {totalPages}</span>
               <select
                 value={pageSize}
@@ -407,7 +498,12 @@ const HospitalInventorySearch = () => {
                   setPageSize(Number(e.target.value));
                   setPage(1);
                 }}
-                className="ml-2 border border-gray-300 rounded px-2 py-1"
+                style={{
+                  padding: '4px 8px',
+                  border: '1px solid #ced4da',
+                  borderRadius: '4px',
+                  fontSize: '14px'
+                }}
               >
                 <option value={10}>10 per page</option>
                 <option value={20}>20 per page</option>
@@ -415,77 +511,134 @@ const HospitalInventorySearch = () => {
               </select>
             </div>
           </div>
-          <div className="divide-y divide-gray-200">
+          <div style={{ borderTop: '1px solid #dee2e6' }}>
             {results.map(item => (
-              <div key={item.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-lg font-medium text-gray-900">{item.name}</h4>
-                      {item.category && (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                          {item.category}
-                        </span>
-                      )}
-                      {item.quantity <= 50 && (
-                        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full flex items-center gap-1">
-                          <AlertTriangle size={12} />
-                          Low Stock
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-6 text-sm text-gray-600">
-                      <span>ID: {item.id}</span>
-                      <span className={`font-medium ${item.quantity <= 50 ? 'text-red-600' : 'text-green-600'}`}>
-                        Quantity: {item.quantity}
+              <div key={item.id} style={{ 
+                padding: '16px', 
+                borderBottom: '1px solid #dee2e6',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-start'
+              }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                    <h4 style={{ fontSize: '16px', fontWeight: 'bold', color: '#333' }}>{item.name}</h4>
+                    {item.category && (
+                      <span style={{ 
+                        padding: '4px 8px', 
+                        backgroundColor: '#d1ecf1', 
+                        color: '#0c5460', 
+                        fontSize: '12px', 
+                        borderRadius: '9999px' 
+                      }}>
+                        {item.category}
                       </span>
-                      {item.location && (
-                        <span className="flex items-center gap-1">
-                          <MapPin size={14} />
-                          {item.location}
-                        </span>
-                      )}
-                      {item.manufacturer && <span>Manufacturer: {item.manufacturer}</span>}
-                      {item.expiration && item.expiration !== "N/A" && (
-                        <span>Expires: {item.expiration}</span>
-                      )}
-                    </div>
+                    )}
+                    {item.quantity <= 50 && (
+                      <span style={{ 
+                        padding: '4px 8px', 
+                        backgroundColor: '#f8d7da', 
+                        color: '#dc3545', 
+                        fontSize: '12px', 
+                        borderRadius: '9999px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        ⚠️ Low Stock
+                      </span>
+                    )}
                   </div>
-                  <div className="flex gap-2 ml-4">
-                    <button className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">
-                      <Edit size={14} />
-                      Edit
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(item.id)}
-                      className="flex items-center gap-1 px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 transition-colors"
-                    >
-                      <Trash2 size={14} />
-                      Delete
-                    </button>
+                  <div style={{ display: 'flex', gap: '24px', fontSize: '14px', color: '#6c757d' }}>
+                    <span>ID: {item.id}</span>
+                    <span style={{ 
+                      fontWeight: 'bold', 
+                      color: item.quantity <= 50 ? '#dc3545' : '#28a745' 
+                    }}>
+                      Quantity: {item.quantity}
+                    </span>
+                    {item.location && (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        📍 {item.location}
+                      </span>
+                    )}
+                    {item.manufacturer && <span>Manufacturer: {item.manufacturer}</span>}
+                    {item.expiration && item.expiration !== "N/A" && (
+                      <span>Expires: {item.expiration}</span>
+                    )}
                   </div>
+                </div>
+                <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
+                  <button style={{
+                    backgroundColor: '#1a5490',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 16px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '14px'
+                  }}>
+                    ✏️ Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(item.id)}
+                    style={{
+                      backgroundColor: '#dc3545',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    🗑️ Delete
+                  </button>
                 </div>
               </div>
             ))}
           </div>
           
           {/* Pagination */}
-          <div className="p-4 border-t border-gray-200 flex justify-between items-center">
-            <div className="text-sm text-gray-600">
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            padding: '16px 0',
+            fontSize: '14px',
+            color: '#6c757d'
+          }}>
+            <div>
               Showing {((page - 1) * pageSize) + 1} to {Math.min(page * pageSize, total)} of {total} results
             </div>
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  border: '1px solid #ced4da',
+                  color: '#333',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  cursor: page <= 1 ? 'not-allowed' : 'pointer',
+                  opacity: page <= 1 ? 0.5 : 1
+                }}
               >
                 Previous
               </button>
               <button
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: '#f8f9fa',
+                  border: '1px solid #ced4da',
+                  color: '#333',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  cursor: page >= totalPages ? 'not-allowed' : 'pointer',
+                  opacity: page >= totalPages ? 0.5 : 1
+                }}
               >
                 Next
               </button>
@@ -493,24 +646,30 @@ const HospitalInventorySearch = () => {
           </div>
         </div>
       ) : showEmpty ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+        <div style={{ textAlign: 'center', padding: '32px 0' }}>
           {isSearching ? (
             <>
-              <Package size={48} className="text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No items found</h3>
-              <p className="text-gray-600 mb-4">Try adjusting your search terms or filters</p>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>No items found</h3>
+              <p style={{ color: '#6c757d', marginBottom: '16px' }}>Try adjusting your search terms or filters</p>
               <button
                 onClick={clearFilters}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                style={{
+                  backgroundColor: '#1a5490',
+                  color: 'white',
+                  border: 'none',
+                  padding: '8px 16px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontSize: '14px'
+                }}
               >
                 Clear search
               </button>
             </>
           ) : (
             <>
-              <Search size={48} className="text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Start searching</h3>
-              <p className="text-gray-600">Enter a search term, ID, or use quick filters to find inventory items</p>
+              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginBottom: '8px' }}>Start searching</h3>
+              <p style={{ color: '#6c757d' }}>Enter a search term, ID, or use quick filters to find inventory items</p>
             </>
           )}
         </div>
