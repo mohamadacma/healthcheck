@@ -149,7 +149,12 @@ var app = builder.Build();
 
 using var scope = app.Services.CreateScope();
 var context = scope.ServiceProvider.GetRequiredService<ItemsDbContext>();
-context.Database.Migrate();
+var databaseProvider = context.Database.ProviderName ?? string.Empty;
+if (!databaseProvider.Contains("InMemory", StringComparison.OrdinalIgnoreCase))
+{
+    context.Database.Migrate();
+}
+
 
 if (app.Environment.IsDevelopment())
 {
@@ -170,7 +175,11 @@ static string ConvertDbUrlToNpgsql(string url)
 var logger = app.Services.GetRequiredService<ILogger<Program>>();
 
 // Configure the HTTP request pipeline.
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors("Frontend");
 app.UseAuthentication();
 app.UseAuthorization();
@@ -364,18 +373,34 @@ app.MapGet("/items", async (
                 if(page <= 0 || pageSize <= 0 || pageSize > 100)
                 return Results.BadRequest("Invalid paging parameters");
 
-                IQueryable<Item> q = db.Items;
+                IQueryable<Item> query = db.Items;
 
                 if(!string.IsNullOrWhiteSpace(search))
-                    q = q.Where(i => i.Name.Contains(search));
-                if(minQuantity.HasValue)
-                    q = q.Where(i => i.Quantity >= minQuantity);
-                if(maxQuantity.HasValue)
-                    q = q.Where(i => i.Quantity <= maxQuantity);
+                {
+                    var s = search.Trim();
+                    
 
-                int total = await q.CountAsync();
+                    if (int.TryParse(s, out var idVal))
+                    {
+                        query = query.Where(i => i.Id == idVal || 
+                                        (i.Name != null && EF.Functions.ILike(i.Name, $"%{s}%")));
+                    }
+                    else 
+                    {
+                        query = query.Where(i => i.Name != null && EF.Functions.ILike(i.Name, $"%{s}%"));
+                    }
+                    logger.LogInformation("Searching items with term: {SearchTerm}, minQuantity: {MinQuantity}, maxQuantity: {MaxQuantity}, page: {Page}, pageSize: {PageSize}", 
+    search, minQuantity, maxQuantity, page, pageSize);
+                }
 
-                var items = await q.OrderBy(i => i.Id)
+                if (minQuantity is int minQ)
+                    query = query.Where(i => i.Quantity >= minQ);
+                if (maxQuantity is int maxQ)
+                    query = query.Where(i => i.Quantity <= maxQ);
+
+                int total = await query.CountAsync();
+
+                var items = await query.OrderBy(i => i.Id)
                                     .Skip((page - 1) * pageSize)
                                     .Take(pageSize)
                                     .Select(i => i.ToResponseDto())
@@ -388,7 +413,14 @@ app.MapGet("/items", async (
             .WithName("GetItems")
             .WithSummary("List items with optional filters & paging")
             .Produces<PagedResponse<ItemResponseDto>>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status400BadRequest);
+            .Produces(StatusCodes.Status400BadRequest)
+            .WithOpenApi(operation =>
+{
+    operation.Parameters.First(p => p.Name == "search").Description = "Search by item ID (exact match) or item name (partial match, case-insensitive)";
+    operation.Parameters.First(p => p.Name == "minQuantity").Description = "Filter items with quantity greater than or equal to this value";
+    operation.Parameters.First(p => p.Name == "maxQuantity").Description = "Filter items with quantity less than or equal to this value";
+    return operation;
+});
 
 
 //POST to create a new item
@@ -471,7 +503,7 @@ app.MapPut("/items/{id}", async (ItemsDbContext context, int id, UpdateItemDto d
         return Results.BadRequest("Name is required");
     }
 
-    if (dto.Quantity < 0    )
+    if (dto.Quantity < 0  )
     {
          logger.LogWarning("Update failed: name too long for ID: {ItemId}", id);
          return Results.BadRequest("Quantity cannot be negative");
