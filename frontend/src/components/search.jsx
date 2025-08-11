@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getItem } from '../api/items';
 import { listItems } from '../api/items';
 import { deleteItem } from '../api/items';
+import { updateItem } from '../api/items'; // Added this import
 
 // API functions 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5200';
@@ -56,6 +57,7 @@ async function request(path, { method = 'GET', body, headers = {}, auth = true }
 }
 
 const get = (path, options) => request(path, { ...options, method: 'GET' });
+const put = (path, options) => request(path, { ...options, method: 'PUT' }); // Added PUT method
 const del = (path, options) => request(path, { ...options, method: 'DELETE' });
 
 // Custom hook for debounced values
@@ -67,6 +69,274 @@ function useDebounced(value, delay = 400) {
   }, [value, delay]);
   return v;
 }
+
+// Edit Modal Component
+const EditModal = ({ item, isOpen, onClose, onSave }) => {
+  const [editData, setEditData] = useState({
+    name: '',
+    category: '',
+    quantity: '',
+    location: '',
+    manufacturer: '',
+    expiration: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const categories = [
+    "Medications",
+    "Medical Devices", 
+    "PPE",
+    "Surgical Instruments",
+    "Diagnostic Equipment",
+    "Consumables"
+  ];
+
+  const locations = [
+    "Pharmacy",
+    "ICU",
+    "Emergency Department",
+    "Operating Room",
+    "General Ward",
+    "Pediatrics",
+    "Maternity"
+  ];
+
+  useEffect(() => {
+    if (item && isOpen) {
+      setEditData({
+        name: item.name || '',
+        category: item.category || '',
+        quantity: item.quantity?.toString() || '',
+        location: item.location || '',
+        manufacturer: item.manufacturer || '',
+        expiration: item.expiration || ''
+      });
+    }
+  }, [item, isOpen]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        ...editData,
+        quantity: parseInt(editData.quantity, 10) || 0
+      };
+      await onSave(item.id, payload);
+      onClose();
+    } catch (error) {
+      alert(`Failed to update item: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '24px',
+        borderRadius: '8px',
+        width: '90%',
+        maxWidth: '500px',
+        maxHeight: '90vh',
+        overflow: 'auto'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ margin: 0, color: '#1a5490' }}>Edit Item</h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#6c757d'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Item Name *
+            </label>
+            <input
+              type="text"
+              value={editData.name}
+              onChange={(e) => setEditData(prev => ({ ...prev, name: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+              required
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Category
+            </label>
+            <select
+              value={editData.category}
+              onChange={(e) => setEditData(prev => ({ ...prev, category: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              <option value="">Select category</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Quantity *
+            </label>
+            <input
+              type="number"
+              value={editData.quantity}
+              onChange={(e) => setEditData(prev => ({ ...prev, quantity: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+              min="0"
+              required
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Location
+            </label>
+            <select
+              value={editData.location}
+              onChange={(e) => setEditData(prev => ({ ...prev, location: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              <option value="">Select location</option>
+              {locations.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Manufacturer
+            </label>
+            <input
+              type="text"
+              value={editData.manufacturer}
+              onChange={(e) => setEditData(prev => ({ ...prev, manufacturer: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Expiration Date
+            </label>
+            <input
+              type="date"
+              value={editData.expiration}
+              onChange={(e) => setEditData(prev => ({ ...prev, expiration: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            />
+          </div>
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          justifyContent: 'flex-end', 
+          marginTop: '24px' 
+        }}>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '4px',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              opacity: saving ? 0.6 : 1
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !editData.name || !editData.quantity}
+            style={{
+              backgroundColor: '#1a5490',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '4px',
+              cursor: (saving || !editData.name || !editData.quantity) ? 'not-allowed' : 'pointer',
+              opacity: (saving || !editData.name || !editData.quantity) ? 0.6 : 1
+            }}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const HospitalInventorySearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -85,6 +355,8 @@ const HospitalInventorySearch = () => {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
   
   const debouncedSearch = useDebounced(searchTerm, 400);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -133,6 +405,30 @@ const HospitalInventorySearch = () => {
       setTotal(0);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // FUNCTION #1: handleEdit - Opens the edit modal
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setEditModalOpen(true);
+  };
+
+  // FUNCTION #2: handleSaveEdit - Saves changes with optimistic updates
+  const handleSaveEdit = async (id, payload) => {
+    const prevItems = results;
+    
+    // Optimistic update - immediately update UI
+    setResults(prev => prev.map(item => 
+      item.id === id ? { ...item, ...payload } : item
+    ));
+
+    try {
+      await updateItem(id, payload); // Call your API
+    } catch (err) {
+      // Revert on error
+      setResults(prevItems);
+      throw err; // Re-throw to be handled by modal
     }
   };
 
@@ -569,15 +865,18 @@ const HospitalInventorySearch = () => {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                  <button style={{
-                    backgroundColor: '#1a5490',
-                    color: 'white',
-                    border: 'none',
-                    padding: '8px 16px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '14px'
-                  }}>
+                  <button 
+                    onClick={() => handleEdit(item)}
+                    style={{
+                      backgroundColor: '#1a5490',
+                      color: 'white',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
                     ✏️ Edit
                   </button>
                   <button 
@@ -674,6 +973,17 @@ const HospitalInventorySearch = () => {
           )}
         </div>
       ) : null}
+
+      {/* Edit Modal */}
+      <EditModal 
+        item={editingItem}
+        isOpen={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingItem(null);
+        }}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 };
