@@ -16,7 +16,7 @@ public static class ItemExtensions
     }
 
     public static ItemResponseDto ToResponseDto(this Item item) =>
-        new ItemResponseDto { Id = item.Id, Name = item.Name, Quantity = item.Quantity };
+        new ItemResponseDto { Id = item.Id, Name = item.Name, Quantity = item.Quantity, LastUpdated = item.LastUpdated,Category = item.Category,Location = item.Location,ExpirationDate = item.ExpirationDate,ReorderLevel = item.ReorderLevel,LastUsed = item.UsageHistory.Any() ? item.UsageHistory.Max(ur => ur.Date) : (DateTime?)null };
 
     public static UserResponseDto ToResponseDto(this User user) =>
         new UserResponseDto(

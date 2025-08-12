@@ -25,5 +25,12 @@ public class Item
             LastUpdated = DateTime.UtcNow;
         }
 
+        public string? Category { get; set; }
+        public string? Location { get; set; }
+        public DateTime? ExpirationDate { get; set; }
+        public int? ReorderLevel { get; set; }
+
+        public List<UsageRecord> UsageHistory { get; set; } = new List<UsageRecord>();
+
 }
 

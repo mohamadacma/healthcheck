@@ -11,6 +11,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 
 
 DotNetEnv.Env.Load();
@@ -615,6 +616,64 @@ app.MapDelete("/items/{id}", async(ItemsDbContext context, int id)=>
     operation.Parameters[0].Description = "The unique identifier of the item";
     return operation;
 });
+
+app.MapPost("/items/{id}/deduct", async (ItemsDbContext context, int id, UsageDeductionDto dto) =>
+{
+    var logger = app.Services.GetRequiredService<ILogger<Program>>(); // Assuming logger is available
+
+    logger.LogInformation("Deducting usage for item ID: {Id}", id);
+
+    if (id <= 0)
+    {
+        return Results.BadRequest("Invalid ID");
+    }
+
+    var validationResults = new List<ValidationResult>();
+    var validationContext = new ValidationContext(dto);
+    if (!Validator.TryValidateObject(dto, validationContext, validationResults, true))
+    {
+        return Results.BadRequest(validationResults.Select(vr => vr.ErrorMessage));
+    }
+
+    var item = await context.Items.Include(i => i.UsageHistory).FirstOrDefaultAsync(i => i.Id == id);
+    if (item == null)
+    {
+        return Results.NotFound("Item not found");
+    }
+
+    if (item.Quantity < dto.Amount)
+    {
+        return Results.BadRequest("Insufficient quantity");
+    }
+    // Deduct quantity
+    item.Quantity -= dto.Amount;
+    item.LastUpdated = DateTime.UtcNow;
+    // Log usage
+    var usageRecord = new UsageRecord
+    {
+        ItemId = id,
+        Amount = dto.Amount,
+        Reason = dto.Reason,
+        User = dto.User
+    };
+    context.UsageRecords.Add(usageRecord);
+
+    await context.SaveChangesAsync();
+
+    if (item.ReorderLevel.HasValue && item.Quantity <= item.ReorderLevel.Value)
+    {
+        logger.LogInformation("stock is low");
+    }
+
+    return Results.Ok(item.ToResponseDto());
+    })
+.RequireAuthorization("ModifyInventory") 
+.WithName("DeductUsage")
+.WithSummary("Deduct usage from an item")
+.WithDescription("Reduces item quantity and logs usage history")
+.Produces<ItemResponseDto>(200)
+.Produces(400)
+.Produces(404);
 
 
 
