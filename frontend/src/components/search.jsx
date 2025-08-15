@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { getItem } from '../api/items';
 import { listItems } from '../api/items';
 import { deleteItem } from '../api/items';
-import { updateItem } from '../api/items'; // Added this import
+import { updateItem } from '../api/items'; 
+import { deductUsage } from '../api/items'; 
 
 // API functions 
 const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5200';
@@ -338,6 +339,188 @@ const EditModal = ({ item, isOpen, onClose, onSave }) => {
   );
 };
 
+// Usage Modal Component
+const UsageModal = ({ itemId, isOpen, onClose, onSave }) => {
+  const [usageData, setUsageData] = useState({
+    amount: '',
+    reason: '',
+    user: ''
+  });
+  const [saving, setSaving] = useState(false);
+
+  const reasons = [
+    "Patient Use",
+    "Procedure",
+    "Waste",
+    "Other"
+  ];
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        amount: parseInt(usageData.amount, 10) || 0,
+        reason: usageData.reason,
+        user: usageData.user
+      };
+      await onSave(itemId, payload);
+      onClose();
+    } catch (error) {
+      alert(`Failed to log usage: ${error.message}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      zIndex: 1000
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '24px',
+        borderRadius: '8px',
+        width: '90%',
+        maxWidth: '400px',
+        maxHeight: '90vh',
+        overflow: 'auto'
+      }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ margin: 0, color: '#1a5490' }}>Log Usage</h3>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '24px',
+              cursor: 'pointer',
+              color: '#6c757d'
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <div style={{ display: 'grid', gap: '16px' }}>
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Amount *
+            </label>
+            <input
+              type="number"
+              value={usageData.amount}
+              onChange={(e) => setUsageData(prev => ({ ...prev, amount: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+              min="1"
+              required
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              Reason
+            </label>
+            <select
+              value={usageData.reason}
+              onChange={(e) => setUsageData(prev => ({ ...prev, reason: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            >
+              <option value="">Select reason</option>
+              {reasons.map(reason => (
+                <option key={reason} value={reason}>{reason}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>
+              User
+            </label>
+            <input
+              type="text"
+              value={usageData.user}
+              onChange={(e) => setUsageData(prev => ({ ...prev, user: e.target.value }))}
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #ced4da',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}
+            />
+          </div>
+        </div>
+
+        <div style={{ 
+          display: 'flex', 
+          gap: '12px', 
+          justifyContent: 'flex-end', 
+          marginTop: '24px' 
+        }}>
+          <button
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '4px',
+              cursor: saving ? 'not-allowed' : 'pointer',
+              opacity: saving ? 0.6 : 1
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving || !usageData.amount}
+            style={{
+              backgroundColor: '#1a5490',
+              color: 'white',
+              border: 'none',
+              padding: '12px 24px',
+              borderRadius: '4px',
+              cursor: (saving || !usageData.amount) ? 'not-allowed' : 'pointer',
+              opacity: (saving || !usageData.amount) ? 0.6 : 1
+            }}
+          >
+            {saving ? 'Saving...' : 'Log Usage'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const HospitalInventorySearch = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -357,6 +540,8 @@ const HospitalInventorySearch = () => {
   const [pageSize, setPageSize] = useState(10);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [usageModalOpen, setUsageModalOpen] = useState(false);
+  const [usageItemId, setUsageItemId] = useState(null);
   
   const debouncedSearch = useDebounced(searchTerm, 400);
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -425,6 +610,30 @@ const HospitalInventorySearch = () => {
 
     try {
       await updateItem(id, payload); // Call your API
+    } catch (err) {
+      // Revert on error
+      setResults(prevItems);
+      throw err; // Re-throw to be handled by modal
+    }
+  };
+
+  // FUNCTION #3: handleUsage - Opens the usage modal
+  const handleUsage = (id) => {
+    setUsageItemId(id);
+    setUsageModalOpen(true);
+  };
+
+  // FUNCTION #4: handleSaveUsage - Logs usage with optimistic updates
+  const handleSaveUsage = async (id, payload) => {
+    const prevItems = results;
+    
+    // Optimistic update - immediately reduce quantity in UI
+    setResults(prev => prev.map(item => 
+      item.id === id ? { ...item, quantity: item.quantity - payload.amount } : item
+    ));
+
+    try {
+      await deductUsage(id, payload); // Call API
     } catch (err) {
       // Revert on error
       setResults(prevItems);
@@ -880,6 +1089,20 @@ const HospitalInventorySearch = () => {
                     ✏️ Edit
                   </button>
                   <button 
+                    onClick={() => handleUsage(item.id)}
+                    style={{
+                      backgroundColor: '#ffc107',
+                      color: 'black',
+                      border: 'none',
+                      padding: '8px 16px',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '14px'
+                    }}
+                  >
+                    📉 Log Usage
+                  </button>
+                  <button 
                     onClick={() => handleDelete(item.id)}
                     style={{
                       backgroundColor: '#dc3545',
@@ -983,6 +1206,17 @@ const HospitalInventorySearch = () => {
           setEditingItem(null);
         }}
         onSave={handleSaveEdit}
+      />
+
+      {/* Usage Modal */}
+      <UsageModal 
+        itemId={usageItemId}
+        isOpen={usageModalOpen}
+        onClose={() => {
+          setUsageModalOpen(false);
+          setUsageItemId(null);
+        }}
+        onSave={handleSaveUsage}
       />
     </div>
   );

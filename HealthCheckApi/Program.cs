@@ -617,10 +617,8 @@ app.MapDelete("/items/{id}", async(ItemsDbContext context, int id)=>
     return operation;
 });
 
-app.MapPost("/items/{id}/deduct", async (ItemsDbContext context, int id, UsageDeductionDto dto) =>
+app.MapPost("/items/{id}/deduct", async (ItemsDbContext context, ILogger<Program> logger, int id, UsageDeductionDto dto) =>
 {
-    var logger = app.Services.GetRequiredService<ILogger<Program>>(); // Assuming logger is available
-
     logger.LogInformation("Deducting usage for item ID: {Id}", id);
 
     if (id <= 0)
@@ -635,45 +633,71 @@ app.MapPost("/items/{id}/deduct", async (ItemsDbContext context, int id, UsageDe
         return Results.BadRequest(validationResults.Select(vr => vr.ErrorMessage));
     }
 
-    var item = await context.Items.Include(i => i.UsageHistory).FirstOrDefaultAsync(i => i.Id == id);
-    if (item == null)
+    try
     {
-        return Results.NotFound("Item not found");
+        logger.LogInformation("Querying item ID: {Id}", id);
+        var item = await context.Items.Include(i => i.UsageHistory).FirstOrDefaultAsync(i => i.Id == id);
+        logger.LogInformation("Item queried: {Item}", item != null ? "Found" : "Not Found");
+        if (item == null)
+        {
+            logger.LogWarning("Item not found for deduction: {Id}", id);
+            return Results.NotFound("Item not found");
+        }
+
+        if (item.Quantity < dto.Amount)
+        {
+            logger.LogWarning("Insufficient quantity for item: {Id}, requested: {Amount}, available: {Quantity}", id, dto.Amount, item.Quantity);
+            return Results.BadRequest("Insufficient quantity");
+        }
+
+        // Deduct quantity
+        item.Quantity -= dto.Amount;
+        item.LastUpdated = DateTime.UtcNow;
+
+        // Log usage
+        var usageRecord = new UsageRecord
+        {
+            ItemId = id,
+            Amount = dto.Amount,
+            Reason = dto.Reason,
+            User = dto.User
+        };
+        context.UsageRecords.Add(usageRecord);
+
+        await context.SaveChangesAsync();
+
+        if (item.ReorderLevel.HasValue && item.Quantity <= item.ReorderLevel.Value)
+        {
+            logger.LogWarning("Low stock for item: {Id}, quantity: {Quantity}", id, item.Quantity);
+        }
+
+        return Results.Ok(item.ToResponseDto());
     }
+    catch (DbUpdateException ex)
+{
+  logger.LogError(ex, "Database error during deduction for item ID: {Id}", id);
+  return Results.Problem(detail: ex.InnerException?.Message ?? ex.Message, statusCode: 500);
+}
+catch (NpgsqlException ex)
+{
+  logger.LogError(ex, "Postgres error during deduction for item ID: {Id}", id);
+  return Results.Problem(detail: ex.Message, statusCode: 500);
+}
+catch (Exception ex)
+{
+  logger.LogError(ex, "Unexpected error during deduction for item ID: {Id}", id);
+  return Results.Problem(detail: ex.Message + " - StackTrace: " + ex.StackTrace, statusCode: 500); // Add stack for debugging
+}
 
-    if (item.Quantity < dto.Amount)
-    {
-        return Results.BadRequest("Insufficient quantity");
-    }
-    // Deduct quantity
-    item.Quantity -= dto.Amount;
-    item.LastUpdated = DateTime.UtcNow;
-    // Log usage
-    var usageRecord = new UsageRecord
-    {
-        ItemId = id,
-        Amount = dto.Amount,
-        Reason = dto.Reason,
-        User = dto.User
-    };
-    context.UsageRecords.Add(usageRecord);
-
-    await context.SaveChangesAsync();
-
-    if (item.ReorderLevel.HasValue && item.Quantity <= item.ReorderLevel.Value)
-    {
-        logger.LogInformation("stock is low");
-    }
-
-    return Results.Ok(item.ToResponseDto());
-    })
+})
 .RequireAuthorization("ModifyInventory") 
 .WithName("DeductUsage")
 .WithSummary("Deduct usage from an item")
 .WithDescription("Reduces item quantity and logs usage history")
 .Produces<ItemResponseDto>(200)
 .Produces(400)
-.Produces(404);
+.Produces(404)
+.Produces(500);
 
 
 
