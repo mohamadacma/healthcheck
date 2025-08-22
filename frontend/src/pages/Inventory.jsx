@@ -2,12 +2,14 @@ import { useState } from 'react';
 import ItemForm from '../components/ItemForm';
 import HospitalInventorySearch from '../components/search';
 import ItemEditForm from '../components/ItemEditForm';
+import ChatPanel from '../components/ChatPanel';
 
 import { clearToken } from '../api/client';
 
 export default function Inventory({ onLogout }) {
     const [refreshKey, setRefreshKey] = useState(0);
     const [editingItem, setEditingItem] = useState(null);
+    const [showChat, setShowChat] = useState(false);
 
     const handleEditSuccess = () => {
         setEditingItem(null);
@@ -18,6 +20,9 @@ export default function Inventory({ onLogout }) {
         <div style={{ maxWidth: 960, margin: '0 auto', padding: 24 }}>
           <header style={{ display:'flex', alignItems:'center', marginBottom:16 }}>
             <h1 style={{ margin: 0 }}>Hospital Inventory Dashboard</h1>
+            <button style={{ marginLeft: 12 }} onClick={() => setShowChat(v => !v)}>
+               {showChat ? 'Hide Chat' : 'Open Chat'}
+            </button>
             <button style={{ marginLeft:'auto' }} onClick={() => { clearToken(); onLogout?.(); }}>
               Logout
             </button>
@@ -41,6 +46,14 @@ export default function Inventory({ onLogout }) {
                     onCancel={() => setEditingItem(null)}
                     />
                 </div>
+        </div>
+      )}
+      {/* Floating chat widget */}
+      {showChat && (
+        <div style={{
+          position: 'fixed', right: 24, bottom: 24, zIndex: 30
+        }}>
+          <ChatPanel onClose={() => setShowChat(false)} />
         </div>
       )}
       </div>

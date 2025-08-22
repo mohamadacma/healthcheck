@@ -12,12 +12,13 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 
 DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
-
 
 
 //Bind Kestrel to Railway
@@ -144,6 +145,8 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod()
         );
 });
+//add chat service
+builder.Services.AddHttpClient<ChatService>();
 
 var app = builder.Build();
 
@@ -699,6 +702,29 @@ catch (Exception ex)
 .Produces(404)
 .Produces(500);
 
+//Chat endpoint
+app.MapPost("/chat", async (ChatRequest req, ChatService chat, ItemsDbContext db) =>
+{
+    if (string.IsNullOrWhiteSpace(req.Message))
+        return Results.BadRequest("Message required.");
+
+    var system = """
+        You are an assistant for a hospital inventory API (HealthCheckApi).
+        Be concise. If the user asks about:
+        - Stock levels: explain they can GET /items?search={name} or summarize how to check.
+        - Deducting items: explain POST /items/{id}/deduct with { amount, reason, user }.
+        - Health: mention /health, /health/ready, /health/live.
+        - Auth: explain login/register and JWT briefly. Never reveal secrets or keys.
+        If you don't know, say so and suggest the correct endpoint.
+        """;
+
+    var answer = await chat.AskAsync(req.Message, system);
+    return Results.Ok(new { reply = answer });
+})
+.RequireAuthorization("AllRoles")
+.WithName("Chat")
+.WithSummary("AI-assisted chat for inventory help")
+.WithDescription("Ask natural-language questions about using the HealthCheck API.");
 
 
 //endpoints to monitor app and db health
@@ -707,6 +733,8 @@ app.MapGet("/health", () => Results.Json(new { status = "ok" }))
 app.MapHealthChecks("/health/ready");
 app.MapHealthChecks("/health/live");
 
+Console.WriteLine($"[DEBUG] OpenAI model = {Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "(null)"}");
+Console.WriteLine($"[DEBUG] OpenAI key present? {!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("OPENAI_API_KEY"))}");
 
 app.Run();
 
