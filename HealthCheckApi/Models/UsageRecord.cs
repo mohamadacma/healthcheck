@@ -13,4 +13,5 @@ public class UsageRecord
     public string? User { get; set; }
 
     public Item? Item { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }

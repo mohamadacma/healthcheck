@@ -14,6 +14,8 @@ using System.Security.Claims;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http.Json;
 using System.Text.Json;
+using ChatRequestDto = HealthCheckApi.DTOs.ChatRequest;
+using Microsoft.Extensions.Caching.Memory;
 
 
 DotNetEnv.Env.Load();
@@ -145,6 +147,8 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod()
         );
 });
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IChatSessionService, ChatSessionService>();
 //add chat service
 builder.Services.AddHttpClient<ChatService>();
 
@@ -703,7 +707,7 @@ catch (Exception ex)
 .Produces(500);
 
 //Chat endpoint
-app.MapPost("/chat", async (ChatRequest req, ChatService chat, ItemsDbContext db) =>
+app.MapPost("/chat", async (ChatRequestDto req, ChatService chat, ItemsDbContext db) =>
 {
     if (string.IsNullOrWhiteSpace(req.Message))
         return Results.BadRequest("Message required.");
