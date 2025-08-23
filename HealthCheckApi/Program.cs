@@ -718,8 +718,8 @@ app.MapPost("/chat", async (ChatRequest req, ChatService chat, ItemsDbContext db
         If you don't know, say so and suggest the correct endpoint.
         """;
 
-    var answer = await chat.AskAsync(req.Message, system);
-    return Results.Ok(new { reply = answer });
+    var result = await chat.AskAsync(req.Message, system);
+    return Results.Ok(new { reply = result.Reply, source = result.Source, error = result.Error });
 })
 .RequireAuthorization("AllRoles")
 .WithName("Chat")

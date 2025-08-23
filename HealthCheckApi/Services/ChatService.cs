@@ -4,6 +4,9 @@ using System.Text.RegularExpressions;
 
 namespace HealthCheckApi.Services
 {
+    public record ChatReply(string Reply, string Source, string? Error = null);
+
+  
     public class ChatService
     {
         private readonly HttpClient _http;
@@ -12,69 +15,78 @@ namespace HealthCheckApi.Services
 
         public ChatService(HttpClient http) { _http = http; }
 
-        public async Task<string> AskAsync(string userMessage, string systemPrompt)
+        public async Task<ChatReply> AskAsync(string userMessage, string systemPrompt)
+{
+    if (string.IsNullOrWhiteSpace(_apiKey))
+        return new ChatReply(
+            Reply: LocalFallback(userMessage),
+            Source: "fallback",
+            Error: "AI not configured."
+        );
+
+    try
+    {
+        using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
+        req.Headers.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
+        req.Content = JsonContent.Create(new
         {
-            // If no key, just use local fallback
-            if (string.IsNullOrWhiteSpace(_apiKey))
-                return LocalFallback(userMessage);
+            model = _model,
+            messages = new object[] {
+                new { role = "system", content = systemPrompt },
+                new { role = "user",   content = userMessage }
+            },
+            temperature = 0.2
+        });
 
-            try
-            {
-                using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/chat/completions");
-                req.Headers.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _apiKey);
-                req.Content = JsonContent.Create(new
-                {
-                    model = _model,
-                    messages = new object[]
-                    {
-                        new { role = "system", content = systemPrompt },
-                        new { role = "user",   content = userMessage }
-                    },
-                    temperature = 0.2
-                });
+        var resp = await _http.SendAsync(req);
+        var text = await resp.Content.ReadAsStringAsync();
 
-                var resp = await _http.SendAsync(req);
-                var text = await resp.Content.ReadAsStringAsync();
-
-                if (!resp.IsSuccessStatusCode)
-                {
-                    // Friendly message + deterministic fallback content
-                    var friendly = TryExtractOpenAIError(resp.StatusCode, text);
-                    var fallback = LocalFallback(userMessage);
-                    return $"{friendly}\n\n(Quick answer)\n{fallback}";
-                }
-
-                var ok = JsonDocument.Parse(text);
-                var content = ok.RootElement
-                    .GetProperty("choices")[0]
-                    .GetProperty("message")
-                    .GetProperty("content")
-                    .GetString();
-
-                return content ?? LocalFallback(userMessage);
-            }
-            catch (Exception ex)
-            {
-                // Network or other exception -> fallback
-                var fallback = LocalFallback(userMessage);
-                return $"AI call failed: {ex.Message}\n\n(Quick answer)\n{fallback}";
-            }
+        if (!resp.IsSuccessStatusCode)
+        {
+            var friendly = TryExtractOpenAIError(resp.StatusCode, text);
+            return new ChatReply(
+                Reply: LocalFallback(userMessage),
+                Source: "fallback",
+                Error: friendly
+            );
         }
 
-        private static string TryExtractOpenAIError(System.Net.HttpStatusCode code, string body)
-        {
-            try
-            {
-                var j = JsonDocument.Parse(body);
-                var msg = j.RootElement.GetProperty("error").GetProperty("message").GetString();
-                return $"AI error ({(int)code}): {msg}";
-            }
-            catch
-            {
-                return $"AI error ({(int)code}): {body}";
-            }
-        }
+        var ok = JsonDocument.Parse(text);
+        var content = ok.RootElement
+            .GetProperty("choices")[0]
+            .GetProperty("message")
+            .GetProperty("content")
+            .GetString();
+
+        return new ChatReply(
+            Reply: content ?? LocalFallback(userMessage),
+            Source: content != null ? "ai" : "fallback",
+            Error: content != null ? null : "Empty AI content; used fallback."
+        );
+    }
+    catch (Exception ex)
+    {
+        return new ChatReply(
+            Reply: LocalFallback(userMessage),
+            Source: "fallback",
+            Error: $"AI call failed: {ex.Message}"
+        );
+    }
+}
+  private static string TryExtractOpenAIError(System.Net.HttpStatusCode code, string body)
+{
+    try
+    { 
+        var j = JsonDocument.Parse(body);
+        var msg = j.RootElement.GetProperty("error").GetProperty("message").GetString();
+        return $"AI error ({(int)code}): {msg}";
+    }
+    catch
+    {
+        return $"AI error ({(int)code}): {body}";
+    }
+}
 
         // Minimal rule-based answers 
         private static string LocalFallback(string msg)

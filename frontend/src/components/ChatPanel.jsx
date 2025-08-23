@@ -18,7 +18,7 @@ export default function ChatPanel({ onClose }) {
 
     try {
       const data = await askChat(text); 
-      setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
+      setMessages((m) => [...m, { role: "assistant", content: data.reply,meta: { source: data.source, error: data.error || null } }]);
     } catch (e) {
       setMessages((m) => [...m, { role: "assistant", content: `Error: ${e.message}` }]);
     } finally {
@@ -41,21 +41,27 @@ export default function ChatPanel({ onClose }) {
       </div>
 
       <div style={{ height: 320, overflowY: "auto", marginTop: 8 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{
-            textAlign: m.role === "user" ? "right" :
-                       m.role === "assistant" ? "left" : "center",
-            margin: "6px 0"
-          }}>
-            <span style={{
-              display: "inline-block", padding: "8px 12px", borderRadius: 12,
-              background: m.role === "user" ? "#e6f0ff" :
-                         m.role === "assistant" ? "#f3f4f6" : "transparent"
-            }}>
-              {m.content}
-            </span>
-          </div>
-        ))}
+      {messages.map((m, i) => (
+  <div key={i} style={{ textAlign: m.role === "user" ? "right" : m.role === "assistant" ? "left" : "center", margin: "6px 0" }}>
+    <span style={{
+      display: "inline-block", padding: "8px 12px", borderRadius: 12,
+      background: m.role === "user" ? "#e6f0ff" :
+                 m.role === "assistant" ? "#f3f4f6" : "transparent"
+    }}>
+      {m.content}
+    </span>
+
+    {/* small meta line for assistant messages */}
+    {m.role === "assistant" && m.meta?.source === "fallback" && m.meta?.error && (
+      <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+        Answered locally. <details style={{ display: "inline" }}>
+          <summary style={{ cursor: "pointer" }}>why?</summary>
+          <span>{m.meta.error}</span>
+        </details>
+      </div>
+    )}
+  </div>
+))}
         {loading && <div style={{ color: "#666", fontSize: 12 }}>Thinking…</div>}
       </div>
 
