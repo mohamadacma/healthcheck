@@ -158,7 +158,7 @@ export default function ChatPanel({ onClose }) {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .chat-panel {
           background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
           border: 1px solid #e2e8f0;

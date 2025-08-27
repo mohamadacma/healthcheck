@@ -1,4 +1,5 @@
-const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:5200'.replace(/\/+$/, '');
+const RAW = process.env.REACT_APP_API_URL ?? 'http://localhost:5200';
+export const API_BASE = RAW.replace(/\/+$/, '');    
 
 export const getToken = () => localStorage.getItem('token');
 export const setToken = (t) => localStorage.setItem('token', t);
@@ -15,46 +16,48 @@ const safeParse = (text) => {
     }
 }
 
-export async function request(path, {method = 'GET', body, headers={}, auth= true})
-{
+export async function request(path, { method = 'GET', body, headers = {}, auth = true } = {}) {
+    const token = auth ? getToken() : null;
+  
     const h = {
-        'Content-Type': 'application/json',
-         'Accept': 'application/json',
-         ...headers,
-         };
-
-    if(auth)
-    {
-        const t = getToken();
-        if(t) h['Authorization'] = `Bearer ${t}`;
-    }
-
+      Accept: 'application/json',
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...headers,
+    };
+  
     const res = await fetch(`${API_BASE}${path}`, {
-        method,
-        headers : h,
-        body : body ? JSON.stringify(body) : undefined,
+      method,
+      headers: h,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-    const contentType = res.headers.get('content-type') || '';
-    const isJson = contentType.includes('application/json');
+  
+    // Read body once:
     const text = await res.text();
+    const ct = res.headers.get('content-type') || '';
+    const isJson = ct.includes('application/json') || ct.includes('application/problem+json');
     const data = isJson && text ? safeParse(text) : null;
-
-    if(!res.ok) {
-        if (res.status === 401) { 
-            clearToken();
-            window.dispatchEvent(new Event('app:unauthorized'));
-         }
-
-        const msg = 
-            (data && (data.title || data.detail || data.message || data.error))|| 
-            text || res.statusText;
-        const err = new Error(`${res.status} ${msg}`);
-        err.status = res.status;
-        err.body = data || text;
-        throw err;
+  
+    if (!res.ok) {
+      if (res.status === 401 && auth) {
+        clearToken();
+        window.dispatchEvent(new Event('app:unauthorized'));
+      }
+      const msg =
+        (data && (data.detail || data.title || data.message || data.error)) ||
+        text ||
+        res.statusText;
+  
+      const err = new Error(`${res.status} ${msg}`);
+      err.status = res.status;
+      err.body = data ?? text;
+      throw err;
     }
-    return data;
-}
+  
+    if (res.status === 204) return null;
+    return data ?? text ?? null;
+  }
+  
 
 export const get = (path,options) => request(path, {...options,method:'GET'});
 export const post =(path,body,options) => request(path,{...options, method:'POST',body});
