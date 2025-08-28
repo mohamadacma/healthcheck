@@ -1,6 +1,7 @@
 # 🩺 HealthCheck API — .NET 9 Learning Project
 
 A **RESTful Web API** full-stack built with **.NET 9** and **Entity Framework Core**, Postgres, and React,designed as a solo hospital inventory management system prototype.
+Live Demo on Azure: [Hospital Inventory Dashboard](https://lemon-mushroom-0596c9310.2.azurestaticapps.net/)
 ---
 
 ## 🎯 Project Purpose
@@ -16,6 +17,7 @@ This project serves as a hands-on learning experience to master modern .NET deve
 - Entity Framework Core with Postgres
 - RESTful API using Minimal APIs
 - DTOs + Validation
+- Azure-ready configuration + deployment (Static Web Apps)
 - Azure-ready configuration
 - HealthCheck endpoints
 - CI/CD with GitHub Actions
@@ -45,6 +47,7 @@ This project serves as a hands-on learning experience to master modern .NET deve
 - Understand and apply **Dependency Injection** in real-world projects
 - Practice **best practices** in API versioning, error handling, and validation
 - Develop a prototype hospital inventory system that addresses real-world challenges like stockouts and waste, preparing for potential industry collaboration.
+- Deployed full-stack app on Azure →
 
 
 ### Future Scope
